@@ -1,0 +1,834 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Resume Parser</title>
+    <style>
+        :root {
+            --primary-bg: #1a1a1a;
+            --secondary-bg: #2c2c2c;
+            --text-color: #e0e0e0;
+            --accent-color: #007bff;
+            --hover-color: #0056b3;
+            --border-color: #444;
+            --shadow-color: rgba(0, 0, 0, 0.3);
+            --success-color: #28a745;
+            --error-color: #dc3545;
+            --info-color: #17a2b8;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            background-color: var(--primary-bg);
+            color: var(--text-color);
+            line-height: 1.6;
+        }
+        .navbar {
+            background-color: var(--secondary-bg);
+            color: white;
+            padding: 15px 25px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 10px var(--shadow-color);
+        }
+        .navbar a {
+            color: var(--text-color);
+            text-decoration: none;
+            padding: 10px 18px;
+            border-radius: 5px;
+            transition: background-color 0.3s ease, color 0.3s ease;
+            font-weight: 500;
+        }
+        .navbar a:hover {
+            background-color: var(--hover-color);
+            color: white;
+        }
+        .navbar .logo {
+            font-size: 1.8em;
+            font-weight: bold;
+            color: var(--accent-color);
+        }
+        .navbar .menu {
+            display: flex;
+            gap: 10px;
+        }
+        .content {
+            padding: 30px;
+            text-align: center;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        h1 {
+            color: var(--text-color);
+            font-size: 2.5em;
+            margin-bottom: 20px;
+        }
+        p {
+            color: var(--text-color);
+            font-size: 1.1em;
+        }
+        .upload-section {
+            margin-top: 30px;
+            padding: 25px;
+            background-color: var(--secondary-bg);
+            border-radius: 10px;
+            box-shadow: 0 5px 15px var(--shadow-color);
+            max-width: 600px;
+            margin: 30px auto;
+            box-sizing: border-box;
+        }
+        .upload-section h2 {
+            color: var(--text-color);
+            margin-bottom: 20px;
+            font-size: 2em;
+        }
+        .upload-section input[type="file"] {
+            display: block;
+            width: calc(100% - 20px);
+            margin: 20px auto;
+            padding: 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            font-size: 1em;
+            background-color: var(--primary-bg);
+            color: var(--text-color);
+            box-sizing: border-box;
+        }
+        .upload-section button {
+            padding: 12px 25px;
+            background-color: var(--accent-color);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 1.1em;
+            cursor: pointer;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+            font-weight: bold;
+        }
+        .upload-section button:hover {
+            background-color: var(--hover-color);
+            transform: translateY(-2px);
+        }
+        .result-section {
+            margin-top: 30px;
+            padding: 25px;
+            background-color: var(--secondary-bg);
+            border-radius: 10px;
+            box-shadow: 0 5px 15px var(--shadow-color);
+            max-width: 900px;
+            margin: 30px auto;
+            text-align: left;
+            box-sizing: border-box;
+        }
+        .result-section h2 {
+            color: var(--text-color);
+            margin-bottom: 20px;
+            font-size: 2em;
+            text-align: center;
+        }
+        .form-section {
+            margin-bottom: 25px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 15px;
+            background-color: var(--primary-bg);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+        }
+        .form-section h3 {
+            color: var(--accent-color);
+            margin-top: 0;
+            margin-bottom: 15px;
+            font-size: 1.6em;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+        }
+        .form-section h3 button {
+            background: none;
+            border: none;
+            color: var(--accent-color);
+            font-size: 1.2em;
+            cursor: pointer;
+            padding: 0;
+            transition: transform 0.3s ease;
+        }
+        .form-section h3 button.expanded {
+            transform: rotate(180deg);
+        }
+        .form-fields {
+            padding-top: 10px;
+            border-top: 1px solid var(--border-color);
+            margin-top: 10px;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            color: var(--text-color);
+            font-weight: bold;
+            font-size: 0.95em;
+        }
+        .form-group input[type="text"],
+        .form-group input[type="email"],
+        .form-group textarea {
+            width: calc(100% - 20px);
+            padding: 10px;
+            border: 1px solid var(--border-color);
+            border-radius: 5px;
+            font-size: 1em;
+            background-color: #3a3a3a;
+            color: var(--text-color);
+            box-sizing: border-box;
+            transition: border-color 0.3s ease, box-shadow 0.3s ease;
+        }
+        .form-group input[type="text"]:focus,
+        .form-group input[type="email"]:focus,
+        .form-group textarea:focus {
+            border-color: var(--accent-color);
+            box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.25);
+            outline: none;
+        }
+        .form-group textarea {
+            resize: vertical;
+            min-height: 60px;
+        }
+        .dynamic-item {
+            border: 1px dashed var(--border-color);
+            padding: 15px;
+            margin-bottom: 15px;
+            border-radius: 8px;
+            background-color: #222;
+        }
+        .dynamic-item h4 {
+            margin-top: 0;
+            color: var(--text-color);
+            font-size: 1.2em;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        .dynamic-item h4 button {
+            background-color: var(--error-color);
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.8em;
+            transition: background-color 0.3s ease;
+        }
+        .dynamic-item h4 button:hover {
+            background-color: darken(var(--error-color), 10%);
+        }
+        .save-button {
+            width: 100%;
+            padding: 12px;
+            background-color: var(--success-color);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 1.2em;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+            margin-top: 20px;
+        }
+        .save-button:hover {
+            background-color: darken(var(--success-color), 10%);
+            transform: translateY(-2px);
+        }
+        #uploadStatus, #saveStatus {
+            margin-top: 15px;
+            font-weight: bold;
+            font-size: 1.1em;
+        }
+        .navigation-buttons {
+            margin-top: 30px;
+            text-align: center;
+        }
+        .navigation-buttons button {
+            padding: 12px 25px;
+            background-color: var(--accent-color);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 1.1em;
+            cursor: pointer;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+            font-weight: bold;
+        }
+        .navigation-buttons button:hover {
+            background-color: var(--hover-color);
+            transform: translateY(-2px);
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .navbar {
+                flex-direction: column;
+                padding: 15px;
+            }
+            .navbar .menu {
+                margin-top: 15px;
+                flex-wrap: wrap;
+                justify-content: center;
+            }
+            .navbar a {
+                padding: 8px 12px;
+            }
+            .content {
+                padding: 20px;
+            }
+            h1 {
+                font-size: 2em;
+            }
+            .upload-section, .result-section {
+                margin: 20px auto;
+                padding: 20px;
+            }
+            .upload-section h2, .result-section h2 {
+                font-size: 1.8em;
+            }
+            .form-section h3 {
+                font-size: 1.4em;
+            }
+            .form-group input, .form-group textarea {
+                font-size: 0.9em;
+                padding: 8px;
+            }
+            .save-button, .navigation-buttons button {
+                font-size: 1em;
+                padding: 10px 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="navbar">
+        <div class="logo">My App</div>
+        <div class="menu">
+            <a href="/dashboard">Dashboard</a>
+            <a href="/resume_parser">Resume Parser</a>
+            <a href="/my_info">My Info</a>
+            <a href="/logout">Logout</a>
+        </div>
+    </div>
+    <div class="content">
+        <h1>Resume Parser</h1>
+        <p>Upload a resume (PDF, DOCX, or image) to extract structured information.</p>
+
+        <div class="upload-section">
+            <h2>Upload Resume</h2>
+            <input type="file" id="resumeFile" accept=".pdf,.docx,.doc,.png,.jpg,.jpeg,.tiff,.bmp">
+            <button onclick="uploadFile()">Parse Resume</button>
+            <p id="uploadStatus"></p>
+        </div>
+
+        <div class="result-section" id="parseResult" style="display:none;">
+            <h2>Parsed Resume Data</h2>
+            <form id="resumeForm">
+                <div class="form-section" id="contact-info-section">
+                    <h3>Contact Information <button type="button" class="toggle-section" data-target="contact-info-fields">▼</button></h3>
+                    <div class="form-fields" id="contact-info-fields" style="display:none;">
+                        <div class="form-group">
+                            <label for="name">Name:</label>
+                            <input type="text" id="name" name="contact_information.name">
+                        </div>
+                        <div class="form-group">
+                            <label for="email">Email:</label>
+                            <input type="email" id="email" name="contact_information.email">
+                        </div>
+                        <div class="form-group">
+                            <label for="phone">Phone:</label>
+                            <input type="text" id="phone" name="contact_information.phone">
+                        </div>
+                        <div class="form-group">
+                            <label for="linkedin">LinkedIn:</label>
+                            <input type="text" id="linkedin" name="contact_information.linkedin">
+                        </div>
+                        <div class="form-group">
+                            <label for="github">GitHub:</label>
+                            <input type="text" id="github" name="contact_information.github">
+                        </div>
+                        <div class="form-group">
+                            <label for="location">Location:</label>
+                            <input type="text" id="location" name="contact_information.location">
+                        </div>
+                        <div class="form-group">
+                            <label for="website">Website:</label>
+                            <input type="text" id="website" name="contact_information.website">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-section" id="summary-section">
+                    <h3>Professional Summary <button type="button" class="toggle-section" data-target="summary-fields">▼</button></h3>
+                    <div class="form-fields" id="summary-fields" style="display:none;">
+                        <div class="form-group">
+                            <textarea id="professional_summary" name="professional_summary" rows="5"></textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-section" id="experience-section">
+                    <h3>Experience <button type="button" class="toggle-section" data-target="experience-fields">▼</button></h3>
+                    <div class="form-fields" id="experience-fields" style="display:none;">
+                        <div id="experience-container"></div>
+                        <button type="button" onclick="addExperienceField()">Add Experience</button>
+                    </div>
+                </div>
+
+                <div class="form-section" id="education-section">
+                    <h3>Education <button type="button" class="toggle-section" data-target="education-fields">▼</button></h3>
+                    <div class="form-fields" id="education-fields" style="display:none;">
+                        <div id="education-container"></div>
+                        <button type="button" onclick="addEducationField()">Add Education</button>
+                    </div>
+                </div>
+
+                <div class="form-section" id="skills-section">
+                    <h3>Skills <button type="button" class="toggle-section" data-target="skills-fields">▼</button></h3>
+                    <div class="form-fields" id="skills-fields" style="display:none;">
+                        <div class="form-group">
+                            <label for="technical_skills">Technical Skills (comma-separated):</label>
+                            <textarea id="technical_skills" name="skills.technical_skills" rows="3"></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label for="soft_skills">Soft Skills (comma-separated):</label>
+                            <textarea id="soft_skills" name="skills.soft_skills" rows="3"></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label for="tools_and_technologies">Tools & Technologies (comma-separated):</label>
+                            <textarea id="tools_and_technologies" name="skills.tools_and_technologies" rows="3"></textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-section" id="projects-section">
+                    <h3>Projects <button type="button" class="toggle-section" data-target="projects-fields">▼</button></h3>
+                    <div class="form-fields" id="projects-fields" style="display:none;">
+                        <div id="projects-container"></div>
+                        <button type="button" onclick="addProjectField()">Add Project</button>
+                    </div>
+                </div>
+
+                <div class="form-section" id="certifications-section">
+                    <h3>Certifications <button type="button" class="toggle-section" data-target="certifications-fields">▼</button></h3>
+                    <div class="form-fields" id="certifications-fields" style="display:none;">
+                        <div id="certifications-container"></div>
+                        <button type="button" onclick="addCertificationField()">Add Certification</button>
+                    </div>
+                </div>
+
+                <div class="form-section" id="achievements-section">
+                    <h3>Achievements and Awards <button type="button" class="toggle-section" data-target="achievements-fields">▼</button></h3>
+                    <div class="form-fields" id="achievements-fields" style="display:none;">
+                        <div class="form-group">
+                            <textarea id="achievements_and_awards" name="achievements_and_awards" rows="5"></textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-section" id="languages-section">
+                    <h3>Languages <button type="button" class="toggle-section" data-target="languages-fields">▼</button></h3>
+                    <div class="form-fields" id="languages-fields" style="display:none;">
+                        <div class="form-group">
+                            <textarea id="languages" name="languages" rows="3"></textarea>
+                        </div>
+                    </div>
+                </div>
+
+                <button type="submit" class="save-button">Save Parsed Data</button>
+                <p id="saveStatus"></p>
+            </form>
+        </div>
+        <div class="navigation-buttons">
+            <button onclick="window.location.href='/my_info'">Go to My Info Page</button>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            document.querySelectorAll('.toggle-section').forEach(button => {
+                button.addEventListener('click', () => {
+                    const targetId = button.dataset.target;
+                    const targetElement = document.getElementById(targetId);
+                    if (targetElement.style.display === 'none') {
+                        targetElement.style.display = 'block';
+                        button.textContent = '▲';
+                    } else {
+                        targetElement.style.display = 'none';
+                        button.textContent = '▼';
+                    }
+                });
+            });
+        });
+
+        function populateForm(data) {
+            document.getElementById('parseResult').style.display = 'block'; // Show the form
+
+            // Clear existing dynamic fields
+            document.getElementById('experience-container').innerHTML = '';
+            document.getElementById('education-container').innerHTML = '';
+            document.getElementById('projects-container').innerHTML = '';
+            document.getElementById('certifications-container').innerHTML = '';
+
+            // Populate contact information
+            if (data.contact_information) {
+                document.getElementById('name').value = data.contact_information.name || '';
+                document.getElementById('email').value = data.contact_information.email || '';
+                document.getElementById('phone').value = data.contact_information.phone || '';
+                document.getElementById('linkedin').value = data.contact_information.linkedin || '';
+                document.getElementById('github').value = data.contact_information.github || '';
+                document.getElementById('location').value = data.contact_information.location || '';
+                document.getElementById('website').value = data.contact_information.website || '';
+                document.getElementById('contact-info-fields').style.display = 'block';
+                document.querySelector('#contact-info-section .toggle-section').textContent = '▲';
+            } else {
+                document.getElementById('contact-info-fields').style.display = 'none';
+                document.querySelector('#contact-info-section .toggle-section').textContent = '▼';
+            }
+
+            // Populate professional summary
+            document.getElementById('professional_summary').value = data.professional_summary || '';
+            if (data.professional_summary) {
+                document.getElementById('summary-fields').style.display = 'block';
+                document.querySelector('#summary-section .toggle-section').textContent = '▲';
+            } else {
+                document.getElementById('summary-fields').style.display = 'none';
+                document.querySelector('#summary-section .toggle-section').textContent = '▼';
+            }
+
+            // Populate experience
+            if (data.experience && Array.isArray(data.experience) && data.experience.length > 0) {
+                data.experience.forEach(exp => addExperienceField(exp));
+                document.getElementById('experience-fields').style.display = 'block';
+                document.querySelector('#experience-section .toggle-section').textContent = '▲';
+            } else {
+                document.getElementById('experience-fields').style.display = 'none';
+                document.querySelector('#experience-section .toggle-section').textContent = '▼';
+            }
+
+            // Populate education
+            if (data.education && Array.isArray(data.education) && data.education.length > 0) {
+                data.education.forEach(edu => addEducationField(edu));
+                document.getElementById('education-fields').style.display = 'block';
+                document.querySelector('#education-section .toggle-section').textContent = '▲';
+            } else {
+                document.getElementById('education-fields').style.display = 'none';
+                document.querySelector('#education-section .toggle-section').textContent = '▼';
+            }
+
+            // Populate skills
+            if (data.skills) {
+                document.getElementById('technical_skills').value = (data.skills.technical_skills || []).join(', ');
+                document.getElementById('soft_skills').value = (data.skills.soft_skills || []).join(', ');
+                document.getElementById('tools_and_technologies').value = (data.skills.tools_and_technologies || []).join(', ');
+                if (data.skills.technical_skills.length > 0 || data.skills.soft_skills.length > 0 || data.skills.tools_and_technologies.length > 0) {
+                    document.getElementById('skills-fields').style.display = 'block';
+                    document.querySelector('#skills-section .toggle-section').textContent = '▲';
+                } else {
+                    document.getElementById('skills-fields').style.display = 'none';
+                    document.querySelector('#skills-section .toggle-section').textContent = '▼';
+                }
+            } else {
+                document.getElementById('skills-fields').style.display = 'none';
+                document.querySelector('#skills-section .toggle-section').textContent = '▼';
+            }
+
+            // Populate projects
+            if (data.projects && Array.isArray(data.projects) && data.projects.length > 0) {
+                data.projects.forEach(proj => addProjectField(proj));
+                document.getElementById('projects-fields').style.display = 'block';
+                document.querySelector('#projects-section .toggle-section').textContent = '▲';
+            } else {
+                document.getElementById('projects-fields').style.display = 'none';
+                document.querySelector('#projects-section .toggle-section').textContent = '▼';
+            }
+
+            // Populate certifications
+            if (data.certifications && Array.isArray(data.certifications) && data.certifications.length > 0) {
+                data.certifications.forEach(cert => addCertificationField(cert));
+                document.getElementById('certifications-fields').style.display = 'block';
+                document.querySelector('#certifications-section .toggle-section').textContent = '▲';
+            } else {
+                document.getElementById('certifications-fields').style.display = 'none';
+                document.querySelector('#certifications-section .toggle-section').textContent = '▼';
+            }
+
+            // Populate achievements and awards
+            document.getElementById('achievements_and_awards').value = (data.achievements_and_awards || []).join('\n');
+            if (data.achievements_and_awards && data.achievements_and_awards.length > 0) {
+                document.getElementById('achievements-fields').style.display = 'block';
+                document.querySelector('#achievements-section .toggle-section').textContent = '▲';
+            } else {
+                document.getElementById('achievements-fields').style.display = 'none';
+                document.querySelector('#achievements-section .toggle-section').textContent = '▼';
+            }
+
+            // Populate languages
+            document.getElementById('languages').value = (data.languages || []).join(', ');
+            if (data.languages && data.languages.length > 0) {
+                document.getElementById('languages-fields').style.display = 'block';
+                document.querySelector('#languages-section .toggle-section').textContent = '▲';
+            } else {
+                document.getElementById('languages-fields').style.display = 'none';
+                document.querySelector('#languages-section .toggle-section').textContent = '▼';
+            }
+        }
+
+        function addExperienceField(exp = {}) {
+            const container = document.getElementById('experience-container');
+            const index = container.children.length;
+            const div = document.createElement('div');
+            div.className = 'form-group dynamic-item';
+            div.innerHTML = `
+                <h4>Experience #${index + 1} <button type="button" onclick="this.parentNode.parentNode.remove()">Remove</button></h4>
+                <label>Position:</label>
+                <input type="text" name="experience[${index}].position" value="${exp.position || ''}">
+                <label>Company:</label>
+                <input type="text" name="experience[${index}].company" value="${exp.company || ''}">
+                <label>Duration:</label>
+                <input type="text" name="experience[${index}].duration" value="${exp.duration || ''}">
+                <label>Location:</label>
+                <input type="text" name="experience[${index}].location" value="${exp.location || ''}">
+                <label>Achievements (one per line):</label>
+                <textarea name="experience[${index}].achievements" rows="3">${(exp.achievements || []).join('\n')}</textarea>
+                <label>Technologies (comma-separated):</label>
+                <input type="text" name="experience[${index}].technologies" value="${(exp.technologies || []).join(', ')}">
+                <hr>
+            `;
+            container.appendChild(div);
+        }
+
+        function addEducationField(edu = {}) {
+            const container = document.getElementById('education-container');
+            const index = container.children.length;
+            const div = document.createElement('div');
+            div.className = 'form-group dynamic-item';
+            div.innerHTML = `
+                <h4>Education #${index + 1} <button type="button" onclick="this.parentNode.parentNode.remove()">Remove</button></h4>
+                <label>Degree:</label>
+                <input type="text" name="education[${index}].degree" value="${edu.degree || ''}">
+                <label>Institution:</label>
+                <input type="text" name="education[${index}].institution" value="${edu.institution || ''}">
+                <label>Graduation Date:</label>
+                <input type="text" name="education[${index}].graduation_date" value="${edu.graduation_date || ''}">
+                <label>GPA:</label>
+                <input type="text" name="education[${index}].gpa" value="${edu.gpa || ''}">
+                <label>Relevant Coursework (comma-separated):</label>
+                <textarea name="education[${index}].relevant_coursework" rows="2">${(edu.relevant_coursework || []).join(', ')}</textarea>
+                <hr>
+            `;
+            container.appendChild(div);
+        }
+
+        function addProjectField(proj = {}) {
+            const container = document.getElementById('projects-container');
+            const index = container.children.length;
+            const div = document.createElement('div');
+            div.className = 'form-group dynamic-item';
+            div.innerHTML = `
+                <h4>Project #${index + 1} <button type="button" onclick="this.parentNode.parentNode.remove()">Remove</button></h4>
+                <label>Name:</label>
+                <input type="text" name="projects[${index}].name" value="${proj.name || ''}">
+                <label>Description:</label>
+                <textarea name="projects[${index}].description" rows="3">${proj.description || ''}</textarea>
+                <label>Technologies (comma-separated):</label>
+                <input type="text" name="projects[${index}].technologies" value="${(proj.technologies || []).join(', ')}">
+                <label>Links (comma-separated):</label>
+                <input type="text" name="projects[${index}].links" value="${(proj.links || []).join(', ')}">
+                <hr>
+            `;
+            container.appendChild(div);
+        }
+
+        function addCertificationField(cert = {}) {
+            const container = document.getElementById('certifications-container');
+            const index = container.children.length;
+            const div = document.createElement('div');
+            div.className = 'form-group dynamic-item';
+            div.innerHTML = `
+                <h4>Certification #${index + 1} <button type="button" onclick="this.parentNode.parentNode.remove()">Remove</button></h4>
+                <label>Name:</label>
+                <input type="text" name="certifications[${index}].name" value="${cert.name || ''}">
+                <label>Issuer:</label>
+                <input type="text" name="certifications[${index}].issuer" value="${cert.issuer || ''}">
+                <label>Date Obtained:</label>
+                <input type="text" name="certifications[${index}].date" value="${cert.date || ''}">
+                <label>Expiry Date:</label>
+                <input type="text" name="certifications[${index}].expiry" value="${cert.expiry || ''}">
+                <hr>
+            `;
+            container.appendChild(div);
+        }
+
+        async function uploadFile() {
+            const fileInput = document.getElementById('resumeFile');
+            const uploadStatus = document.getElementById('uploadStatus');
+            const file = fileInput.files[0];
+
+            if (!file) {
+                uploadStatus.textContent = 'Please select a file first.';
+                uploadStatus.style.color = 'var(--error-color)';
+                return;
+            }
+
+            uploadStatus.textContent = 'Uploading file...';
+            uploadStatus.style.color = 'var(--info-color)';
+            document.getElementById('saveStatus').textContent = ''; // Clear save status
+
+            const formData = new FormData();
+            formData.append('file', file);
+
+            try {
+                // Step 1: Upload the file
+                const uploadResponse = await fetch('/upload', {
+                    method: 'POST',
+                    body: formData
+                });
+                const uploadData = await uploadResponse.json();
+
+                if (!uploadResponse.ok) {
+                    throw new Error(uploadData.error || 'File upload failed.');
+                }
+
+                uploadStatus.textContent = 'File uploaded. Parsing resume...';
+                uploadStatus.style.color = 'var(--info-color)';
+
+                // Step 2: Parse the uploaded file
+                const parseResponse = await fetch('/parse', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ filename: uploadData.filename })
+                });
+                const parseData = await parseResponse.json();
+
+                if (!parseResponse.ok) {
+                    throw new Error(parseData.error || 'Resume parsing failed.');
+                }
+
+                uploadStatus.textContent = 'Resume parsed successfully! Data loaded into editable fields.';
+                uploadStatus.style.color = 'var(--success-color)';
+                populateForm(parseData);
+
+            } catch (error) {
+                uploadStatus.textContent = `Error: ${error.message}`;
+                uploadStatus.style.color = 'var(--error-color)';
+                console.error('Error:', error);
+            }
+        }
+
+        document.getElementById('resumeForm').addEventListener('submit', async function(event) {
+            event.preventDefault();
+            const saveStatus = document.getElementById('saveStatus');
+            const formData = new FormData(event.target);
+            const parsedData = {};
+
+            // Helper to set nested properties
+            function setNested(obj, path, value) {
+                const parts = path.split('.');
+                let current = obj;
+                for (let i = 0; i < parts.length - 1; i++) {
+                    const part = parts[i];
+                    const arrayMatch = part.match(/(\w+)\[(\d+)\]/);
+                    if (arrayMatch) {
+                        const arrayName = arrayMatch[1];
+                        const index = parseInt(arrayMatch[2]);
+                        if (!current[arrayName]) {
+                            current[arrayName] = [];
+                        }
+                        if (!current[arrayName][index]) {
+                            current[arrayName][index] = {};
+                        }
+                        current = current[arrayName][index];
+                    } else {
+                        if (!current[part]) {
+                            current[part] = {};
+                        }
+                        current = current[part];
+                    }
+                }
+                const lastPart = parts[parts.length - 1];
+                const lastArrayMatch = lastPart.match(/(\w+)\[(\d+)\]/);
+                if (lastArrayMatch) {
+                    const arrayName = lastArrayMatch[1];
+                    const index = parseInt(lastArrayMatch[2]);
+                    if (!current[arrayName]) {
+                        current[arrayName] = [];
+                    }
+                    current[arrayName][index] = value;
+                } else {
+                    current[lastPart] = value;
+                }
+            }
+
+            for (let [key, value] of formData.entries()) {
+                if (key.includes('[')) { // Handle array fields like experience[0].position
+                    const parts = key.split('.');
+                    const section = parts[0].split('[')[0];
+                    const index = parseInt(parts[0].match(/\[(\d+)\]/)[1]);
+                    const field = parts[1];
+
+                    if (!parsedData[section]) parsedData[section] = [];
+                    if (!parsedData[section][index]) parsedData[section][index] = {};
+
+                    if (field === 'achievements' || field === 'relevant_coursework' || field === 'technologies' || field === 'links') {
+                        parsedData[section][index][field] = value.split('\n').map(s => s.trim()).filter(s => s);
+                    } else {
+                        parsedData[section][index][field] = value;
+                    }
+                } else if (key.includes('.')) { // Handle nested objects like contact_information.name
+                    setNested(parsedData, key, value);
+                } else if (key === 'technical_skills' || key === 'soft_skills' || key === 'tools_and_technologies' || key === 'languages') {
+                    if (!parsedData.skills) parsedData.skills = {};
+                    parsedData.skills[key] = value.split(',').map(s => s.trim()).filter(s => s);
+                } else if (key === 'achievements_and_awards') {
+                    parsedData[key] = value.split('\n').map(s => s.trim()).filter(s => s);
+                }
+                else {
+                    parsedData[key] = value;
+                }
+            }
+
+            // Filter out empty arrays/objects
+            for (const key in parsedData) {
+                if (Array.isArray(parsedData[key]) && parsedData[key].length === 0) {
+                    delete parsedData[key];
+                } else if (typeof parsedData[key] === 'object' && Object.keys(parsedData[key]).length === 0) {
+                    delete parsedData[key];
+                }
+            }
+
+            try {
+                const saveResponse = await fetch('/save_parsed_resume', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(parsedData)
+                });
+                const saveData = await saveResponse.json();
+
+                if (!saveResponse.ok) {
+                    throw new Error(saveData.error || 'Failed to save parsed data.');
+                }
+
+                saveStatus.textContent = 'Parsed data saved successfully!';
+                saveStatus.style.color = 'var(--success-color)';
+            } catch (error) {
+                saveStatus.textContent = `Error saving data: ${error.message}`;
+                saveStatus.style.color = 'var(--error-color)';
+                console.error('Error saving data:', error);
+            }
+        });
+    </script>

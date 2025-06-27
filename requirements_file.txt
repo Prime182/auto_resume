@@ -8,3 +8,5 @@ Werkzeug==2.3.7
 mistralai==1.8.2
 PyMuPDF==1.23.8
 python-dotenv
+passlib[bcrypt]
+python-multipart

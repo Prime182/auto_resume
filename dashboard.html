@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard</title>
+    <style>
+        :root {
+            --primary-bg: #1a1a1a;
+            --secondary-bg: #2c2c2c;
+            --text-color: #e0e0e0;
+            --accent-color: #007bff;
+            --hover-color: #0056b3;
+            --border-color: #444;
+            --shadow-color: rgba(0, 0, 0, 0.3);
+            --success-color: #28a745;
+            --error-color: #dc3545;
+            --info-color: #17a2b8;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            background-color: var(--primary-bg);
+            color: var(--text-color);
+            line-height: 1.6;
+        }
+        .navbar {
+            background-color: var(--secondary-bg);
+            color: white;
+            padding: 15px 25px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 10px var(--shadow-color);
+        }
+        .navbar a {
+            color: var(--text-color);
+            text-decoration: none;
+            padding: 10px 18px;
+            border-radius: 5px;
+            transition: background-color 0.3s ease, color 0.3s ease;
+            font-weight: 500;
+        }
+        .navbar a:hover {
+            background-color: var(--hover-color);
+            color: white;
+        }
+        .navbar .logo {
+            font-size: 1.8em;
+            font-weight: bold;
+            color: var(--accent-color);
+        }
+        .navbar .menu {
+            display: flex;
+            gap: 10px;
+        }
+        .content {
+            padding: 30px;
+            text-align: center;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        h1 {
+            color: var(--text-color);
+            font-size: 2.5em;
+            margin-bottom: 20px;
+        }
+        p {
+            color: var(--text-color);
+            font-size: 1.1em;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .navbar {
+                flex-direction: column;
+                padding: 15px;
+            }
+            .navbar .menu {
+                margin-top: 15px;
+                flex-wrap: wrap;
+                justify-content: center;
+            }
+            .navbar a {
+                padding: 8px 12px;
+            }
+            .content {
+                padding: 20px;
+            }
+            h1 {
+                font-size: 2em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="navbar">
+        <div class="logo">My App</div>
+        <div class="menu">
+            <a href="/dashboard">Dashboard</a>
+            <a href="/resume_parser">Resume Parser</a>
+            <a href="/my_info">My Info</a>
+            <a href="/logout">Logout</a>
+        </div>
+    </div>
+    <div class="content">
+        <h1>Welcome to your Dashboard!</h1>
+        <p>This is a placeholder for your main dashboard content.</p>
+    </div>
