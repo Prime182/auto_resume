@@ -188,7 +188,7 @@ class MistralOCRResumeParser:
                 image_base64 = self.image_to_base64(image)
                 
                 # Create the prompt for context-aware OCR
-                ocr_prompt = """
+                ocr_prompt = r"""
                 You are an expert resume parser with advanced OCR capabilities. Analyze this resume image and extract structured information while preserving layout context.
 
                 Please extract and organize the following information in JSON format:
@@ -438,109 +438,6 @@ class MistralOCRResumeParser:
             return {"error": f"Error parsing resume: {str(e)}"}
 
 
-import json
-import re
-import base64
-from typing import Dict, List, Any
-import logging
-from datetime import datetime
-from io import BytesIO
-
-# Document processing imports
-import fitz  # PyMuPDF for PDF processing
-from docx import Document
-from PIL import Image
-
-# NLP imports
-import spacy
-
-# Mistral API client
-from mistralai import Mistral
-
-# Set up logging
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
-
-app = Flask(__name__)
-CORS(app)
-app.secret_key = os.getenv('FLASK_SECRET_KEY', 'super_secret_key_for_dev') # Add a secret key for sessions
-
-# Load environment variables from .env file
-load_dotenv()
-
-# Configuration
-UPLOAD_FOLDER = 'uploads'
-ALLOWED_EXTENSIONS = {'pdf', 'docx', 'doc', 'png', 'jpg', 'jpeg', 'tiff', 'bmp'}
-MAX_CONTENT_LENGTH = 16 * 1024 * 1024  # 16MB max file size
-
-app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
-app.config['MAX_CONTENT_LENGTH'] = MAX_CONTENT_LENGTH
-
-# Create upload directory if it doesn't exist
-os.makedirs(UPLOAD_FOLDER, exist_ok=True)
-
-# Mistral API configuration
-MISTRAL_API_KEY = os.getenv('MISTRAL_API_KEY')
-if not MISTRAL_API_KEY:
-    logger.warning("MISTRAL_API_KEY not found in environment variables")
-
-# Initialize Mistral client
-mistral_client = None
-if MISTRAL_API_KEY:
-    try:
-        mistral_client = Mistral(api_key=MISTRAL_API_KEY)
-    except Exception as e:
-        logger.error(f"Failed to initialize Mistral client: {str(e)}")
-
-# Load spaCy model
-try:
-    nlp = spacy.load("en_core_web_sm")
-except OSError:
-    logger.error("spaCy model 'en_core_web_sm' not found. Please install it using: python -m spacy download en_core_web_sm")
-    nlp = None
-
-class MistralOCRResumeParser:
-    """Enhanced resume parser using Mistral's OCR and layout understanding capabilities"""
-    
-    def __init__(self):
-        self.section_keywords = {
-            'contact': ['contact', 'personal information', 'contact information', 'contact details'],
-            'summary': ['summary', 'profile', 'objective', 'about', 'overview', 'professional summary'],
-            'education': ['education', 'academic', 'qualification', 'degree', 'university', 'college', 'school'],
-            'experience': ['experience', 'work', 'employment', 'career', 'professional', 'job', 'work history'],
-            'skills': ['skills', 'technical skills', 'competencies', 'abilities', 'technologies', 'core competencies'],
-            'projects': ['projects', 'project', 'portfolio', 'work samples', 'key projects'],
-            'certifications': ['certifications', 'certificates', 'license', 'credentials', 'professional certifications'],
-            'achievements': ['achievements', 'awards', 'honors', 'accomplishments', 'recognition'],
-            'languages': ['languages', 'language skills', 'linguistic abilities']
-        }
-        
-        # Enhanced regex patterns
-        self.email_pattern = re.compile(r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b')
-        self.phone_pattern = re.compile(r'(\+?\d{1,3}[-.\s]?)?\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}')
-        self.linkedin_pattern = re.compile(r'linkedin\.com/in/[\w-]+', re.IGNORECASE)
-        self.github_pattern = re.compile(r'github\.com/[\w-]+', re.IGNORECASE)
-        
-    def allowed_file(self, filename: str) -> bool:
-        """Check if file extension is allowed"""
-        return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
-    
-    def convert_pdf_to_images(self, file_path: str) -> List[Image.Image]:
-        """Convert PDF pages to images for OCR processing"""
-        images = []
-        try:
-            doc = fitz.open(file_path)
-            for page_num in range(len(doc)):
-                page = doc.load_page(page_num)
-                pix = page.get_pixmap(matrix=fitz.Matrix(2.0, 2.0))  # 2x zoom for better quality
-                img_data = pix.tobytes("png")
-                img = Image.open(BytesIO(img_data))
-                images.append(img)
-            doc.close()
-            return images
-        except Exception as e:
-            logger.error(f"Error converting PDF to images: {str(e)}")
-            return []
     
     def convert_docx_to_images(self, file_path: str) -> List[Image.Image]:
         """Convert DOCX to images (simplified approach)"""
@@ -603,7 +500,7 @@ class MistralOCRResumeParser:
                 image_base64 = self.image_to_base64(image)
                 
                 # Create the prompt for context-aware OCR
-                ocr_prompt = """
+                ocr_prompt = r"""
                 You are an expert resume parser with advanced OCR capabilities. Analyze this resume image and extract structured information while preserving layout context.
 
                 Please extract and organize the following information in JSON format:
@@ -1376,7 +1273,7 @@ def preview_resume():
                                 }});
                                 const addButton = document.createElement('button');
                                 addButton.className = 'add-item-button';
-                                addButton.textContent = `Add ${{sectionKey.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}}`;
+                                addButton.textContent = `Add ${{sectionKey.replace(/_/g, ' ').replace(/\\b[A-Za-z0-9_]/g, l => l.toUpperCase())}}`;
                                 addButton.onclick = () => addListItem(sectionKey, listSections[sectionKey].default);
                                 container.appendChild(addButton);
                             }}
