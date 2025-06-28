@@ -105,23 +105,110 @@
             border-radius: 8px;
             background-color: var(--primary-bg);
             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+            position: relative; /* For positioning delete/save buttons */
         }
         .resume-entry h4 {
             margin-top: 0;
             color: var(--accent-color);
             font-size: 1.5em;
             margin-bottom: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
-        .resume-entry pre {
-            background-color: #222;
+        .resume-entry h4 .delete-button {
+            margin-left: 15px;
+            background-color: var(--error-color);
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 0.8em;
+            transition: background-color 0.3s ease;
+        }
+        .resume-entry h4 .delete-button:hover {
+            background-color: #c82333;
+        }
+
+        .editable-content {
+            margin-top: 15px;
             padding: 15px;
-            border-radius: 6px;
-            overflow-x: auto;
-            white-space: pre-wrap;
-            word-wrap: break-word;
-            color: #a0a0a0;
-            font-family: 'Consolas', 'Courier New', monospace;
-            font-size: 0.95em;
+            background-color: var(--secondary-bg);
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+        }
+
+        .data-section-item {
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 1px dashed var(--border-color);
+        }
+        .data-section-item:last-child {
+            border-bottom: none;
+        }
+        .data-section-item h4 {
+            color: var(--text-color);
+            font-size: 1.3em;
+            margin-bottom: 10px;
+            border-bottom: none; /* Override resume-entry h4 border */
+        }
+        .data-section-item h5 {
+            color: var(--accent-color);
+            font-size: 1.1em;
+            margin-top: 15px;
+            margin-bottom: 5px;
+        }
+
+        .data-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        .data-item label {
+            flex-shrink: 0;
+            width: 120px; /* Fixed width for labels */
+            font-weight: bold;
+            margin-right: 10px;
+            color: var(--accent-color);
+            text-align: right;
+        }
+        .editable-field {
+            flex-grow: 1;
+            padding: 8px 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 5px;
+            background-color: var(--primary-bg);
+            color: var(--text-color);
+            font-size: 1em;
+            transition: border-color 0.3s ease, box-shadow 0.3s ease;
+            width: calc(100% - 130px); /* Adjust width based on label */
+        }
+        .editable-field:focus {
+            border-color: var(--accent-color);
+            box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
+            outline: none;
+        }
+
+        .save-button {
+            background-color: var(--success-color);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1em;
+            margin-top: 20px;
+            transition: background-color 0.3s ease;
+            float: right; /* Align to the right */
+        }
+        .save-button:hover {
+            background-color: #218838;
+        }
+        .resume-entry::after {
+            content: "";
+            display: table;
+            clear: both;
         }
 
         /* Responsive Design */
@@ -156,6 +243,29 @@
             }
             .resume-entry h4 {
                 font-size: 1.2em;
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            .resume-entry h4 .delete-button {
+                margin-left: 0;
+                margin-top: 10px;
+            }
+            .data-item {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            .data-item label {
+                width: auto;
+                text-align: left;
+                margin-bottom: 5px;
+            }
+            .editable-field {
+                width: 100%;
+            }
+            .save-button {
+                float: none;
+                width: 100%;
+                text-align: center;
             }
         }
     </style>
@@ -167,6 +277,7 @@
             <a href="/dashboard">Dashboard</a>
             <a href="/resume_parser">Resume Parser</a>
             <a href="/my_info">My Info</a>
+            <a href="/resume_builder">Resume Builder</a>
             <a href="/logout">Logout</a>
         </div>
     </div>
@@ -216,7 +327,10 @@
                                     ${resume.filename} (Parsed on: ${new Date(resume.timestamp.$date).toLocaleString()})
                                     ${deleteButtonHtml}
                                 </h4>
-                                <pre>${formatParsedData(resume.parsed_data)}</pre>
+                                <div class="editable-content" data-id="${resume._id}">
+                                    ${formatParsedData(resume.parsed_data)}
+                                </div>
+                                <button class="save-button" data-id="${resume._id}">Save Changes</button>
                             `;
                             container.appendChild(resumeDiv);
                         } else {
@@ -230,6 +344,12 @@
                             deleteResume(resumeId);
                         });
                     });
+                    document.querySelectorAll('.save-button').forEach(button => {
+                        button.addEventListener('click', (event) => {
+                            const resumeId = event.target.dataset.id;
+                            saveResumeChanges(resumeId);
+                        });
+                    });
                 } else {
                     container.innerHTML = '<p>No parsed resumes found for your account.</p>';
                 }
@@ -240,57 +360,60 @@
             }
         }
 
-        function formatParsedData(data) {
+        function formatParsedData(data, path = '') {
             let html = '';
             if (typeof data === 'object' && data !== null) {
                 for (const key in data) {
                     if (Object.prototype.hasOwnProperty.call(data, key)) {
                         const value = data[key];
-                        html += `<div class="data-section-item">`;
-                        html += `<h4>${key.replace(/_/g, ' ').toUpperCase()}</h4>`; // Convert key to title case for section heading
-                        html += `<div style="padding-left: 20px;">`; // Indent content within section
-                        html += formatSectionContent(value);
-                        html += `</div>`;
-                        html += `</div>`;
-                    }
-                }
-            }
-            return html;
-        }
+                        const currentPath = path ? `${path}.${key}` : key;
 
-        function formatSectionContent(content, indent = 0) {
-            let html = '';
-            const indentSpace = '&nbsp;&nbsp;&nbsp;&nbsp;'; // 4 spaces for indentation
-            const currentIndent = indentSpace.repeat(indent);
-
-            if (Array.isArray(content)) {
-                content.forEach((item, index) => {
-                    html += `${currentIndent}<strong>Item ${index + 1}:</strong><br>`;
-                    html += formatSectionContent(item, indent + 1);
-                });
-            } else if (typeof content === 'object' && content !== null) {
-                for (const key in content) {
-                    if (Object.prototype.hasOwnProperty.call(content, key)) {
-                        const value = content[key];
                         if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
-                            html += `${currentIndent}<strong>${key.replace(/_/g, ' ')}:</strong><br>`;
-                            html += formatSectionContent(value, indent + 1);
+                            html += `<div class="data-section-item">`;
+                            html += `<h4>${key.replace(/_/g, ' ').toUpperCase()}</h4>`;
+                            html += `<div style="padding-left: 20px;">`;
+                            html += formatParsedData(value, currentPath);
+                            html += `</div>`;
+                            html += `</div>`;
                         } else if (Array.isArray(value)) {
-                            html += `${currentIndent}<strong>${key.replace(/_/g, ' ')}:</strong><br>`;
+                            html += `<div class="data-section-item">`;
+                            html += `<h4>${key.replace(/_/g, ' ').toUpperCase()} (List)</h4>`;
+                            html += `<div style="padding-left: 20px;">`;
                             value.forEach((item, index) => {
-                                html += `${currentIndent}${indentSpace}<strong>Entry ${index + 1}:</strong><br>`;
-                                html += formatSectionContent(item, indent + 2);
+                                html += `<h5>Entry ${index + 1}:</h5>`;
+                                html += `<div style="padding-left: 20px;">`;
+                                html += formatParsedData(item, `${currentPath}[${index}]`);
+                                html += `</div>`;
                             });
-                        }
-                        else {
-                            html += `${currentIndent}<strong>${key.replace(/_/g, ' ')}:</strong> ${value}<br>`;
+                            html += `</div>`;
+                            html += `</div>`;
+                        } else {
+                            // Simple key-value pair, make it editable
+                            html += `<div class="data-item">`;
+                            html += `<label>${key.replace(/_/g, ' ')}:</label>`;
+                            html += `<input type="text" class="editable-field" data-path="${currentPath}" value="${value !== undefined && value !== null ? escapeHtml(String(value)) : ''}">`;
+                            html += `</div>`;
                         }
                     }
                 }
             } else {
-                html += `${currentIndent}${content}<br>`;
+                // Handle primitive values directly if they are passed as data
+                html += `<div class="data-item">`;
+                html += `<input type="text" class="editable-field" data-path="${path}" value="${data !== undefined && data !== null ? escapeHtml(String(data)) : ''}">`;
+                html += `</div>`;
             }
             return html;
+        }
+
+        function escapeHtml(text) {
+            const map = {
+                '&': '&',
+                '<': '<',
+                '>': '>',
+                '"': '"',
+                "'": '&#039;'
+            };
+            return text.replace(/[&<>"']/g, function(m) { return map[m]; });
         }
 
         async function deleteResume(resumeId) {
@@ -321,6 +444,88 @@
             } catch (error) {
                 alert(`Error: ${error.message}`);
                 console.error('Error deleting resume:', error);
+            }
+        }
+
+        async function saveResumeChanges(resumeId) {
+            if (typeof resumeId !== 'string' || resumeId.trim() === '' || resumeId === 'undefined' || resumeId === 'null') {
+                console.error('Invalid resumeId for saving:', resumeId);
+                alert('Cannot save: Invalid resume ID provided.');
+                return;
+            }
+
+            const resumeDiv = document.querySelector(`.resume-entry .editable-content[data-id="${resumeId}"]`);
+            if (!resumeDiv) {
+                console.error('Resume div not found for ID:', resumeId);
+                alert('Error: Could not find resume data to save.');
+                return;
+            }
+
+            const updatedData = {};
+            resumeDiv.querySelectorAll('.editable-field').forEach(input => {
+                const path = input.dataset.path;
+                const value = input.value;
+                setNestedValue(updatedData, path, value);
+            });
+
+            console.log('Saving changes for resume ID:', resumeId, 'Data:', updatedData);
+
+            try {
+                const response = await fetch(`/update_resume/${resumeId}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ parsed_data: updatedData })
+                });
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.error || 'Failed to save changes.');
+                }
+
+                alert(data.message);
+                // Optionally, re-fetch to show updated data, or just indicate success
+                // fetchParsedResumes();
+            } catch (error) {
+                alert(`Error saving changes: ${error.message}`);
+                console.error('Error saving resume changes:', error);
+            }
+        }
+
+        function setNestedValue(obj, path, value) {
+            const parts = path.split('.');
+            let current = obj;
+
+            for (let i = 0; i < parts.length; i++) {
+                let part = parts[i];
+                const arrayMatch = part.match(/(.*)\[(\d+)\]/);
+
+                if (arrayMatch) {
+                    const arrayKey = arrayMatch[1];
+                    const index = parseInt(arrayMatch[2], 10);
+
+                    if (!current[arrayKey]) {
+                        current[arrayKey] = [];
+                    }
+                    if (i === parts.length - 1) {
+                        current[arrayKey][index] = value;
+                    } else {
+                        if (!current[arrayKey][index]) {
+                            current[arrayKey][index] = {};
+                        }
+                        current = current[arrayKey][index];
+                    }
+                } else {
+                    if (i === parts.length - 1) {
+                        current[part] = value;
+                    } else {
+                        if (!current[part]) {
+                            current[part] = {};
+                        }
+                        current = current[part];
+                    }
+                }
             }
         }
     </script>

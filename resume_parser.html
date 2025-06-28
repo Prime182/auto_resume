@@ -308,6 +308,60 @@
                 padding: 10px 20px;
             }
         }
+
+        .progress-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-top: 30px;
+            margin-bottom: 30px;
+            gap: 15px;
+        }
+
+        .progress-step {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background-color: var(--secondary-bg);
+            color: var(--text-color);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-weight: bold;
+            font-size: 1.2em;
+            border: 2px solid var(--border-color);
+            transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease;
+        }
+
+        .progress-step.active {
+            background-color: var(--accent-color);
+            border-color: var(--accent-color);
+            color: white;
+        }
+
+        .progress-step.completed {
+            background-color: var(--success-color);
+            border-color: var(--success-color);
+            color: white;
+        }
+
+        .progress-step:not(.active):not(.completed) {
+            cursor: pointer; /* Indicate clickable for non-active/completed steps */
+        }
+
+        .progress-step:not(.active):not(.completed):hover {
+            background-color: var(--hover-color);
+            border-color: var(--hover-color);
+        }
+
+        .form-section {
+            display: none; /* Hide all sections by default */
+        }
+
+        .form-section.active {
+            display: block; /* Show active section */
+        }
+
     </style>
 </head>
 <body>
@@ -317,6 +371,7 @@
             <a href="/dashboard">Dashboard</a>
             <a href="/resume_parser">Resume Parser</a>
             <a href="/my_info">My Info</a>
+            <a href="/resume_builder">Resume Builder</a>
             <a href="/logout">Logout</a>
         </div>
     </div>
@@ -333,6 +388,17 @@
 
         <div class="result-section" id="parseResult" style="display:none;">
             <h2>Parsed Resume Data</h2>
+            <div class="progress-container" id="progressContainer" style="display:none;">
+                <div class="progress-step active" data-step="1">1</div>
+                <div class="progress-step" data-step="2">2</div>
+                <div class="progress-step" data-step="3">3</div>
+                <div class="progress-step" data-step="4">4</div>
+                <div class="progress-step" data-step="5">5</div>
+                <div class="progress-step" data-step="6">6</div>
+                <div class="progress-step" data-step="7">7</div>
+                <div class="progress-step" data-step="8">8</div>
+                <div class="progress-step" data-step="9">9</div>
+            </div>
             <form id="resumeForm">
                 <div class="form-section" id="contact-info-section">
                     <h3>Contact Information <button type="button" class="toggle-section" data-target="contact-info-fields">▼</button></h3>
@@ -364,6 +430,10 @@
                         <div class="form-group">
                             <label for="website">Website:</label>
                             <input type="text" id="website" name="contact_information.website">
+                        </div>
+                        <div class="form-group">
+                            <label for="urls">Other URLs (one per line):</label>
+                            <textarea id="urls" name="contact_information.urls" rows="3"></textarea>
                         </div>
                     </div>
                 </div>
@@ -449,12 +519,28 @@
                 <p id="saveStatus"></p>
             </form>
         </div>
+
         <div class="navigation-buttons">
+            <button id="prevButton" style="display:none;">Previous</button>
+            <button id="nextButton" style="display:none;">Next</button>
             <button onclick="window.location.href='/my_info'">Go to My Info Page</button>
         </div>
     </div>
 
     <script>
+        const formSections = [
+            'contact-info-section',
+            'summary-section',
+            'experience-section',
+            'education-section',
+            'skills-section',
+            'projects-section',
+            'certifications-section',
+            'achievements-section',
+            'languages-section'
+        ];
+        let currentStage = 0; // 0-indexed
+
         document.addEventListener('DOMContentLoaded', () => {
             document.querySelectorAll('.toggle-section').forEach(button => {
                 button.addEventListener('click', () => {
@@ -469,10 +555,76 @@
                     }
                 });
             });
+
+            document.getElementById('nextButton').addEventListener('click', () => {
+                if (currentStage < formSections.length - 1) {
+                    currentStage++;
+                    showStage(currentStage);
+                }
+            });
+
+            document.getElementById('prevButton').addEventListener('click', () => {
+                if (currentStage > 0) {
+                    currentStage--;
+                    showStage(currentStage);
+                }
+            });
         });
+
+        function showStage(stageIndex) {
+            // Hide all form sections and reset toggle buttons
+            formSections.forEach((sectionId, index) => {
+                const sectionElement = document.getElementById(sectionId);
+                const toggleButton = sectionElement.querySelector('.toggle-section');
+                sectionElement.style.display = 'none';
+                if (toggleButton) {
+                    toggleButton.textContent = '▼';
+                    const targetElement = document.getElementById(toggleButton.dataset.target);
+                    if (targetElement) {
+                        targetElement.style.display = 'none';
+                    }
+                }
+            });
+
+            // Show the current stage's section and expand its fields
+            const currentSectionId = formSections[stageIndex];
+            const currentSectionElement = document.getElementById(currentSectionId);
+            if (currentSectionElement) {
+                currentSectionElement.style.display = 'block';
+                currentSectionElement.classList.add('active'); // Add active class for CSS styling if needed
+
+                const toggleButton = currentSectionElement.querySelector('.toggle-section');
+                if (toggleButton) {
+                    toggleButton.textContent = '▲';
+                    const targetElement = document.getElementById(toggleButton.dataset.target);
+                    if (targetElement) {
+                        targetElement.style.display = 'block';
+                    }
+                }
+            }
+
+            // Update progress indicator
+            const progressSteps = document.querySelectorAll('.progress-step');
+            progressSteps.forEach((step, index) => {
+                step.classList.remove('active', 'completed');
+                if (index === stageIndex) {
+                    step.classList.add('active');
+                } else if (index < stageIndex) {
+                    step.classList.add('completed');
+                }
+            });
+
+            // Update navigation buttons visibility
+            document.getElementById('prevButton').style.display = (stageIndex > 0) ? 'inline-block' : 'none';
+            document.getElementById('nextButton').style.display = (stageIndex < formSections.length - 1) ? 'inline-block' : 'none';
+
+            // Show/hide save button
+            document.querySelector('.save-button').style.display = (stageIndex === formSections.length - 1) ? 'block' : 'none';
+        }
 
         function populateForm(data) {
             document.getElementById('parseResult').style.display = 'block'; // Show the form
+            document.getElementById('progressContainer').style.display = 'flex'; // Show progress indicator
 
             // Clear existing dynamic fields
             document.getElementById('experience-container').innerHTML = '';
@@ -489,41 +641,21 @@
                 document.getElementById('github').value = data.contact_information.github || '';
                 document.getElementById('location').value = data.contact_information.location || '';
                 document.getElementById('website').value = data.contact_information.website || '';
-                document.getElementById('contact-info-fields').style.display = 'block';
-                document.querySelector('#contact-info-section .toggle-section').textContent = '▲';
-            } else {
-                document.getElementById('contact-info-fields').style.display = 'none';
-                document.querySelector('#contact-info-section .toggle-section').textContent = '▼';
+                document.getElementById('urls').value = (data.contact_information.urls || []).join('\n');
+                // No need to explicitly show/hide contact-info-fields here, showStage will handle it
             }
 
             // Populate professional summary
             document.getElementById('professional_summary').value = data.professional_summary || '';
-            if (data.professional_summary) {
-                document.getElementById('summary-fields').style.display = 'block';
-                document.querySelector('#summary-section .toggle-section').textContent = '▲';
-            } else {
-                document.getElementById('summary-fields').style.display = 'none';
-                document.querySelector('#summary-section .toggle-section').textContent = '▼';
-            }
 
             // Populate experience
             if (data.experience && Array.isArray(data.experience) && data.experience.length > 0) {
                 data.experience.forEach(exp => addExperienceField(exp));
-                document.getElementById('experience-fields').style.display = 'block';
-                document.querySelector('#experience-section .toggle-section').textContent = '▲';
-            } else {
-                document.getElementById('experience-fields').style.display = 'none';
-                document.querySelector('#experience-section .toggle-section').textContent = '▼';
             }
 
             // Populate education
             if (data.education && Array.isArray(data.education) && data.education.length > 0) {
                 data.education.forEach(edu => addEducationField(edu));
-                document.getElementById('education-fields').style.display = 'block';
-                document.querySelector('#education-section .toggle-section').textContent = '▲';
-            } else {
-                document.getElementById('education-fields').style.display = 'none';
-                document.querySelector('#education-section .toggle-section').textContent = '▼';
             }
 
             // Populate skills
@@ -531,57 +663,34 @@
                 document.getElementById('technical_skills').value = (data.skills.technical_skills || []).join(', ');
                 document.getElementById('soft_skills').value = (data.skills.soft_skills || []).join(', ');
                 document.getElementById('tools_and_technologies').value = (data.skills.tools_and_technologies || []).join(', ');
-                if (data.skills.technical_skills.length > 0 || data.skills.soft_skills.length > 0 || data.skills.tools_and_technologies.length > 0) {
-                    document.getElementById('skills-fields').style.display = 'block';
-                    document.querySelector('#skills-section .toggle-section').textContent = '▲';
-                } else {
-                    document.getElementById('skills-fields').style.display = 'none';
-                    document.querySelector('#skills-section .toggle-section').textContent = '▼';
-                }
-            } else {
-                document.getElementById('skills-fields').style.display = 'none';
-                document.querySelector('#skills-section .toggle-section').textContent = '▼';
             }
 
             // Populate projects
             if (data.projects && Array.isArray(data.projects) && data.projects.length > 0) {
                 data.projects.forEach(proj => addProjectField(proj));
-                document.getElementById('projects-fields').style.display = 'block';
-                document.querySelector('#projects-section .toggle-section').textContent = '▲';
-            } else {
-                document.getElementById('projects-fields').style.display = 'none';
-                document.querySelector('#projects-section .toggle-section').textContent = '▼';
             }
 
             // Populate certifications
             if (data.certifications && Array.isArray(data.certifications) && data.certifications.length > 0) {
                 data.certifications.forEach(cert => addCertificationField(cert));
-                document.getElementById('certifications-fields').style.display = 'block';
-                document.querySelector('#certifications-section .toggle-section').textContent = '▲';
+            }
+
+            // Populate URLs for contact_information
+            if (data.contact_information && data.contact_information.urls && Array.isArray(data.contact_information.urls)) {
+                document.getElementById('urls').value = data.contact_information.urls.join('\n');
             } else {
-                document.getElementById('certifications-fields').style.display = 'none';
-                document.querySelector('#certifications-section .toggle-section').textContent = '▼';
+                document.getElementById('urls').value = '';
             }
 
             // Populate achievements and awards
             document.getElementById('achievements_and_awards').value = (data.achievements_and_awards || []).join('\n');
-            if (data.achievements_and_awards && data.achievements_and_awards.length > 0) {
-                document.getElementById('achievements-fields').style.display = 'block';
-                document.querySelector('#achievements-section .toggle-section').textContent = '▲';
-            } else {
-                document.getElementById('achievements-fields').style.display = 'none';
-                document.querySelector('#achievements-section .toggle-section').textContent = '▼';
-            }
 
             // Populate languages
             document.getElementById('languages').value = (data.languages || []).join(', ');
-            if (data.languages && data.languages.length > 0) {
-                document.getElementById('languages-fields').style.display = 'block';
-                document.querySelector('#languages-section .toggle-section').textContent = '▲';
-            } else {
-                document.getElementById('languages-fields').style.display = 'none';
-                document.querySelector('#languages-section .toggle-section').textContent = '▼';
-            }
+
+            // Initialize to the first stage
+            currentStage = 0;
+            showStage(currentStage);
         }
 
         function addExperienceField(exp = {}) {
@@ -665,6 +774,8 @@
                 <input type="text" name="certifications[${index}].date" value="${cert.date || ''}">
                 <label>Expiry Date:</label>
                 <input type="text" name="certifications[${index}].expiry" value="${cert.expiry || ''}">
+                <label>Link:</label>
+                <input type="text" name="certifications[${index}].link" value="${cert.link || ''}">
                 <hr>
             `;
             container.appendChild(div);
@@ -730,9 +841,14 @@
 
         document.getElementById('resumeForm').addEventListener('submit', async function(event) {
             event.preventDefault();
+            const saveButton = event.submitter; // Get the button that triggered the submit
             const saveStatus = document.getElementById('saveStatus');
             const formData = new FormData(event.target);
             const parsedData = {};
+
+            saveButton.disabled = true; // Disable the button immediately
+            saveStatus.textContent = 'Saving data...';
+            saveStatus.style.color = 'var(--info-color)';
 
             // Helper to set nested properties
             function setNested(obj, path, value) {
@@ -792,8 +908,8 @@
                 } else if (key === 'technical_skills' || key === 'soft_skills' || key === 'tools_and_technologies' || key === 'languages') {
                     if (!parsedData.skills) parsedData.skills = {};
                     parsedData.skills[key] = value.split(',').map(s => s.trim()).filter(s => s);
-                } else if (key === 'achievements_and_awards') {
-                    parsedData[key] = value.split('\n').map(s => s.trim()).filter(s => s);
+                } else if (key === 'achievements_and_awards' || key === 'contact_information.urls') {
+                    setNested(parsedData, key, value.split('\n').map(s => s.trim()).filter(s => s));
                 }
                 else {
                     parsedData[key] = value;
@@ -829,6 +945,8 @@
                 saveStatus.textContent = `Error saving data: ${error.message}`;
                 saveStatus.style.color = 'var(--error-color)';
                 console.error('Error saving data:', error);
+            } finally {
+                saveButton.disabled = false; // Re-enable the button
             }
         });
     </script>

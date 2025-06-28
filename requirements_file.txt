@@ -10,3 +10,4 @@ PyMuPDF==1.23.8
 python-dotenv
 passlib[bcrypt]
 python-multipart
+pymongo

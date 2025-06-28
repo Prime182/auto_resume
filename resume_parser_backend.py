@@ -1,11 +1,12 @@
-from flask import Flask, request, jsonify, send_from_directory, redirect, url_for, flash, session
+from flask import Flask, Blueprint, request, jsonify, send_from_directory, current_app, flash, redirect, url_for, session
 from flask_cors import CORS
 import os
+import json
+import uuid # To generate unique filenames for temporary files
 from dotenv import load_dotenv # Import load_dotenv
 from users import UserInDB, get_database_client
 from auth import get_password_hash, verify_password, get_user
 
-import json
 import re
 import base64
 from typing import Dict, List, Any
@@ -108,6 +109,23 @@ class MistralOCRResumeParser:
         except Exception as e:
             logger.error(f"Error converting PDF to images: {str(e)}")
             return []
+
+    def extract_links_from_pdf(self, file_path: str) -> List[str]:
+        """Extract hyperlinks from a PDF document using PyMuPDF."""
+        links = []
+        try:
+            doc = fitz.open(file_path)
+            for page_num in range(len(doc)):
+                page = doc.load_page(page_num)
+                page_links = page.get_links()
+                for link in page_links:
+                    if link['kind'] == fitz.LINK_URI:
+                        links.append(link['uri'])
+            doc.close()
+            return list(set(links)) # Return unique links
+        except Exception as e:
+            logger.error(f"Error extracting links from PDF: {str(e)}")
+            return []
     
     def convert_docx_to_images(self, file_path: str) -> List[Image.Image]:
         """Convert DOCX to images (simplified approach)"""
@@ -188,7 +206,8 @@ class MistralOCRResumeParser:
                         "linkedin": "linkedin profile",
                         "github": "github profile",
                         "location": "city, state/country",
-                        "website": "personal website"
+                        "website": "personal website",
+                        "urls": ["list of all detected URLs/hyperlinks"]
                     },
                     "professional_summary": "summary or objective text",
                     "experience": [
@@ -380,8 +399,10 @@ class MistralOCRResumeParser:
             
             # Convert document to images based on file type
             images = []
+            # Removed extracted_urls = []
             if file_extension == 'pdf':
                 images = self.convert_pdf_to_images(file_path)
+                # Removed extracted_urls = self.extract_links_from_pdf(file_path)
             elif file_extension in ['docx', 'doc']:
                 images = self.convert_docx_to_images(file_path)
             elif file_extension in ['png', 'jpg', 'jpeg', 'tiff', 'bmp']:
@@ -400,6 +421,7 @@ class MistralOCRResumeParser:
                 # Merge multi-page data
                 if ocr_result.get('pages'):
                     merged_data = self.merge_multi_page_data(ocr_result['pages'])
+                    
                     merged_data['extraction_metadata'] = {
                         'total_pages': ocr_result['total_pages'],
                         'extraction_method': 'mistral_ocr',
@@ -415,15 +437,6 @@ class MistralOCRResumeParser:
             logger.error(f"Error parsing resume: {str(e)}")
             return {"error": f"Error parsing resume: {str(e)}"}
 
-# Initialize parser
-parser = MistralOCRResumeParser()
-
-from flask import Flask, request, jsonify, send_from_directory, redirect, url_for, flash
-from flask_cors import CORS
-import os
-from dotenv import load_dotenv # Import load_dotenv
-from users import UserInDB, get_database_client
-from auth import get_password_hash, verify_password, get_user
 
 import json
 import re
@@ -608,7 +621,8 @@ class MistralOCRResumeParser:
                         "linkedin": "linkedin profile",
                         "github": "github profile",
                         "location": "city, state/country",
-                        "website": "personal website"
+                        "website": "personal website",
+                        "urls": ["list of all detected URLs/hyperlinks"]
                     },
                     "professional_summary": "summary or objective text",
                     "experience": [
@@ -648,7 +662,8 @@ class MistralOCRResumeParser:
                             "name": "certification name",
                             "issuer": "issuing organization",
                             "date": "date obtained",
-                            "expiry": "expiry date if applicable"
+                            "expiry": "expiry date if applicable",
+                            "link": "link to certification if available"
                         }
                     ],
                     "achievements_and_awards": ["list of achievements"],
@@ -662,6 +677,7 @@ class MistralOCRResumeParser:
                 4. Separate different types of skills appropriately
                 5. Maintain the context and meaning of bullet points and achievements
                 6. Handle multi-column layouts correctly
+                7. **Crucially, identify and extract all hyperlinks/URLs present in the document, especially from contact information, project sections, and certifications.**
 
                 Only include sections that are actually present in the resume. If a section is empty or not found, omit it from the JSON.
                 """
@@ -913,18 +929,29 @@ def resume_parser_page():
 @app.route('/my_info')
 def my_info_page():
     """Serve the my info HTML page"""
-    if 'username' not in session:
-        flash('Please log in to view your information.', 'error')
-        return redirect(url_for('index'))
+    # Temporarily bypass authentication for testing
+    # if 'username' not in session:
+    #     flash('Please log in to view your information.', 'error')
+    #     return redirect(url_for('index'))
     return send_from_directory('.', 'my_info.html')
+
+@app.route('/resume_builder')
+def resume_builder_page():
+    """Serve the resume builder HTML page"""
+    if 'username' not in session:
+        flash('Please log in to access the resume builder.', 'error')
+        return redirect(url_for('index'))
+    return send_from_directory('.', 'resume_builder.html')
 
 @app.route('/my_info_data')
 def my_info_data():
     """Fetch parsed resume data for the logged-in user"""
-    if 'username' not in session:
-        return jsonify({'error': 'Unauthorized. Please log in.'}), 401
+    # Temporarily bypass authentication for testing
+    # if 'username' not in session:
+    #     return jsonify({'error': 'Unauthorized. Please log in.'}), 401
     
-    username = session['username']
+    # For testing, use a dummy username if not logged in
+    username = session.get('username', 'test_user') 
     client = get_database_client()
     db = client["ai_resume"]
     parsed_resumes_collection = db["parsed_resumes"]
@@ -1069,6 +1096,42 @@ def delete_resume(resume_id):
         logger.error(f"Error deleting resume {resume_id}: {str(e)}")
         return jsonify({'error': f'Failed to delete resume: {str(e)}'}), 500
 
+@app.route('/update_resume/<resume_id>', methods=['PUT'])
+def update_resume(resume_id):
+    """Update a parsed resume entry in the database"""
+    if 'username' not in session:
+        return jsonify({'error': 'Unauthorized. Please log in.'}), 401
+    
+    username = session['username']
+    data = request.get_json()
+
+    if not data or 'parsed_data' not in data:
+        return jsonify({'error': 'No parsed_data provided for updating.'}), 400
+
+    client = get_database_client()
+    db = client["ai_resume"]
+    parsed_resumes_collection = db["parsed_resumes"]
+
+    try:
+        from bson.objectid import ObjectId
+        # Update the document, ensuring it belongs to the logged-in user
+        result = parsed_resumes_collection.update_one(
+            {"_id": ObjectId(resume_id), "username": username},
+            {"$set": {"parsed_data": data['parsed_data'], "last_updated": datetime.now()}}
+        )
+        
+        if result.matched_count == 1:
+            if result.modified_count == 1:
+                logger.info(f"Resume {resume_id} updated by {username}.")
+                return jsonify({'message': 'Resume updated successfully!'}), 200
+            else:
+                return jsonify({'message': 'No changes detected or saved.'}), 200
+        else:
+            return jsonify({'error': 'Resume not found or not authorized to update.'}), 404
+    except Exception as e:
+        logger.error(f"Error updating resume {resume_id}: {str(e)}")
+        return jsonify({'error': f'Failed to update resume: {str(e)}'}), 500
+
 @app.route('/parse-preview', methods=['POST'])
 def parse_resume_preview():
     """Preview parse results without full processing (for testing)"""
@@ -1112,6 +1175,299 @@ def parse_resume_preview():
         logger.error(f"Preview error: {str(e)}")
         return jsonify({'error': f'Preview failed: {str(e)}'}), 500
 
+@app.route('/templates')
+def get_templates():
+    """Fetch available resume templates from the database"""
+    if 'username' not in session:
+        return jsonify({'error': 'Unauthorized. Please log in.'}), 401
+
+    client = get_database_client()
+    db = client["ai_resume"]
+    templates_collection = db["resume_templates"]
+
+    templates = []
+    for template in templates_collection.find({}, {"template_id": 1, "_id": 0}): # Only fetch template_id
+        templates.append(template['template_id'])
+    client.close()
+    return jsonify({'templates': templates}), 200
+
+@app.route('/preview_resume', methods=['POST'])
+def preview_resume():
+    data = request.json
+    template_id = data.get('template_id')
+    parsed_data_id = data.get('parsed_data_id')
+
+    if not template_id or not parsed_data_id:
+        return jsonify({"error": "Template ID and Parsed Data ID are required."}), 400
+
+    client = get_database_client()
+    db = client["ai_resume"]
+    templates_collection = db["resume_templates"]
+    parsed_resumes_collection = db["parsed_resumes"]
+
+    try:
+        from bson.objectid import ObjectId
+        # Fetch template content
+        template_data = templates_collection.find_one({"template_id": template_id})
+        if not template_data:
+            client.close()
+            return jsonify({"error": "Template not found."}), 404
+
+        html_content = template_data.get("html_content", "")
+        css_content = template_data.get("css_content", "")
+        js_content = template_data.get("js_content", "")
+
+        # Fetch parsed resume data
+        parsed_resume = parsed_resumes_collection.find_one({"_id": ObjectId(parsed_data_id)})
+        if not parsed_resume:
+            client.close()
+            return jsonify({"error": "Parsed resume data not found."}), 404
+
+        parsed_data = parsed_resume.get("parsed_data", {})
+
+        # Construct the full HTML for the iframe
+        # Escape </script> tags in js_content to prevent premature termination
+        escaped_js_content = js_content.replace("</script>", "<\\/script>")
+
+        iframe_html_content = f"""
+            <!DOCTYPE html>
+            <html lang="en">
+            <head>
+                <meta charset="UTF-8">
+                <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                <title>Resume Preview</title>
+                <style>
+                    body {{ font-family: sans-serif; margin: 20px; }}
+                    .editable-field {{ border: 1px solid #ccc; padding: 5px; margin: 2px 0; width: calc(100% - 12px); }}
+                    .editable-list-item {{ margin-bottom: 10px; padding: 10px; border: 1px dashed #eee; }}
+                    .add-item-button, .remove-item-button {{
+                        background-color: #007bff; color: white; border: none; padding: 5px 10px;
+                        border-radius: 3px; cursor: pointer; margin-top: 5px;
+                    }}
+                    .remove-item-button {{ background-color: #dc3545; margin-left: 5px; }}
+                    {css_content}
+                </style>
+            </head>
+            <body>
+                {html_content}
+                <script type="application/json" id="resumeDataJson">
+                    {json.dumps(parsed_data)}
+                </script>
+                <script>
+                    window.resumeData = JSON.parse(document.getElementById('resumeDataJson').textContent);
+                    window.parsedDataId = "{parsed_data_id}";
+
+                    // Function to populate placeholders and make them editable
+                    // Helper function to get a value from an object based on a path string
+                    function getObjectValue(obj, path) {{
+                        return path.split('.').reduce((o, i) => (o ? o[i] : undefined), obj);
+                    }}
+
+                    // Helper function to set a value in an object based on a path string
+                    function setObjectValue(obj, path, value) {{
+                        const parts = path.split('.');
+                        let current = obj;
+                        for (let i = 0; i < parts.length - 1; i++) {{
+                            if (!current[parts[i]]) {{
+                                current[parts[i]] = {{}};
+                            }}
+                            current = current[parts[i]];
+                        }}
+                        current[parts[parts.length - 1]] = value;
+                    }}
+
+                    // Function to populate placeholders and make them editable
+                    function renderEditableResume() {{
+                        // Iterate over all elements with data-path attribute
+                        document.querySelectorAll('[data-path]').forEach(element => {{
+                            const dataPath = element.dataset.path;
+                            let value = getObjectValue(window.resumeData, dataPath);
+
+                            // Handle array values (e.g., skills, achievements)
+                            if (Array.isArray(value)) {{
+                                value = value.join('\\n'); // Join array items with newline for textarea
+                            }} else if (typeof value === 'object' && value !== null) {{
+                                // If it's an object, we might need to stringify or handle specifically
+                                // For now, we'll just skip or show a placeholder
+                                value = JSON.stringify(value); // Or handle more gracefully
+                            }} else {{
+                                value = value || ''; // Ensure value is a string
+                            }}
+
+                            if (element.tagName === 'INPUT' || element.tagName === 'TEXTAREA') {{
+                                element.value = escapeHtml(value);
+                            }} else {{
+                                element.textContent = value; // For non-input elements
+                            }}
+                        }});
+
+                        // Dynamic rendering for list sections (experience, education, projects, etc.)
+                        // This part assumes the template has a container for each list section, e.g., <div id="experience_list_container"></div>
+                        const listSections = {{
+                            'experience': {{
+                                default: {{ position: '', company: '', duration: '', location: '', achievements: [], technologies: [] }},
+                                render: (item, index) => `
+                                    <label>Position:</label><input type="text" class="editable-field" data-path="experience[${{index}}].position" value="${{escapeHtml(item.position || '')}}"><br>
+                                    <label>Company:</label><input type="text" class="editable-field" data-path="experience[${{index}}].company" value="${{escapeHtml(item.company || '')}}"><br>
+                                    <label>Duration:</label><input type="text" class="editable-field" data-path="experience[${{index}}].duration" value="${{escapeHtml(item.duration || '')}}"><br>
+                                    <label>Location:</label><input type="text" class="editable-field" data-path="experience[${{index}}].location" value="${{escapeHtml(item.location || '')}}"><br>
+                                    <label>Achievements:</label><textarea class="editable-field" data-path="experience[${{index}}].achievements">${{escapeHtml(Array.isArray(item.achievements) ? item.achievements.join('\\n') : item.achievements || '')}}</textarea><br>
+                                    <label>Technologies:</label><input type="text" class="editable-field" data-path="experience[${{index}}].technologies" value="${{escapeHtml(Array.isArray(item.technologies) ? item.technologies.join(', ') : item.technologies || '')}}"><br>
+                                    <button class="remove-item-button" data-index="${{index}}" data-section="experience">Remove</button>
+                                `
+                            }},
+                            'education': {{
+                                default: {{ degree: '', institution: '', graduation_date: '', gpa: '', relevant_coursework: [] }},
+                                render: (item, index) => `
+                                    <label>Degree:</label><input type="text" class="editable-field" data-path="education[${{index}}].degree" value="${{escapeHtml(item.degree || '')}}"><br>
+                                    <label>Institution:</label><input type="text" class="editable-field" data-path="education[${{index}}].institution" value="${{escapeHtml(item.institution || '')}}"><br>
+                                    <label>Graduation Date:</label><input type="text" class="editable-field" data-path="education[${{index}}].graduation_date" value="${{escapeHtml(item.graduation_date || '')}}"><br>
+                                    <label>GPA:</label><input type="text" class="editable-field" data-path="education[${{index}}].gpa" value="${{escapeHtml(item.gpa || '')}}"><br>
+                                    <label>Coursework:</label><textarea class="editable-field" data-path="education[${{index}}].relevant_coursework">${{escapeHtml(Array.isArray(item.relevant_coursework) ? item.relevant_coursework.join('\\n') : item.relevant_coursework || '')}}</textarea><br>
+                                    <button class="remove-item-button" data-index="${{index}}" data-section="education">Remove</button>
+                                `
+                            }},
+                            'projects': {{
+                                default: {{ name: '', description: '', technologies: [], links: [] }},
+                                render: (item, index) => `
+                                    <label>Project Name:</label><input type="text" class="editable-field" data-path="projects[${{index}}].name" value="${{escapeHtml(item.name || '')}}"><br>
+                                    <label>Description:</label><textarea class="editable-field" data-path="projects[${{index}}].description">${{escapeHtml(item.description || '')}}</textarea><br>
+                                    <label>Technologies:</label><input type="text" class="editable-field" data-path="projects[${{index}}].technologies" value="${{escapeHtml(Array.isArray(item.technologies) ? item.technologies.join(', ') : item.technologies || '')}}"><br>
+                                    <label>Links:</label><input type="text" class="editable-field" data-path="projects[${{index}}].links" value="${{escapeHtml(Array.isArray(item.links) ? item.links.join(', ') : item.links || '')}}"><br>
+                                    <button class="remove-item-button" data-index="${{index}}" data-section="projects">Remove</button>
+                                `
+                            }},
+                            'certifications': {{
+                                default: {{ name: '', issuer: '', date: '', expiry: '', link: '' }},
+                                render: (item, index) => `
+                                    <label>Certification Name:</label><input type="text" class="editable-field" data-path="certifications[${{index}}].name" value="${{escapeHtml(item.name || '')}}"><br>
+                                    <label>Issuer:</label><input type="text" class="editable-field" data-path="certifications[${{index}}].issuer" value="${{escapeHtml(item.issuer || '')}}"><br>
+                                    <label>Date:</label><input type="text" class="editable-field" data-path="certifications[${{index}}].date" value="${{escapeHtml(item.date || '')}}"><br>
+                                    <label>Expiry:</label><input type="text" class="editable-field" data-path="certifications[${{index}}].expiry" value="${{escapeHtml(item.expiry || '')}}"><br>
+                                    <label>Link:</label><input type="text" class="editable-field" data-path="certifications[${{index}}].link" value="${{escapeHtml(item.link || '')}}"><br>
+                                    <button class="remove-item-button" data-index="${{index}}" data-section="certifications">Remove</button>
+                                `
+                            }},
+                            'achievements_and_awards': {{
+                                default: '',
+                                render: (item, index) => `
+                                    <textarea class="editable-field" data-path="achievements_and_awards[${{index}}]">${{escapeHtml(item || '')}}</textarea><br>
+                                    <button class="remove-item-button" data-index="${{index}}" data-section="achievements_and_awards">Remove</button>
+                                `
+                            }},
+                            'languages': {{
+                                default: '',
+                                render: (item, index) => `
+                                    <input type="text" class="editable-field" data-path="languages[${{index}}]" value="${{escapeHtml(item || '')}}"><br>
+                                    <button class="remove-item-button" data-index="${{index}}" data-section="languages">Remove</button>
+                                `
+                            }}
+                        }};
+
+                        for (const sectionKey in listSections) {{
+                            const container = document.getElementById(`${{sectionKey}}_list_container`);
+                            if (container && window.resumeData[sectionKey]) {{
+                                container.innerHTML = ''; // Clear existing content
+                                window.resumeData[sectionKey].forEach((item, index) => {{
+                                    const itemDiv = document.createElement('div');
+                                    itemDiv.className = 'editable-list-item';
+                                    itemDiv.innerHTML = listSections[sectionKey].render(item, index);
+                                    container.appendChild(itemDiv);
+                                }});
+                                const addButton = document.createElement('button');
+                                addButton.className = 'add-item-button';
+                                addButton.textContent = `Add ${{sectionKey.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}}`;
+                                addButton.onclick = () => addListItem(sectionKey, listSections[sectionKey].default);
+                                container.appendChild(addButton);
+                            }}
+                        }}
+
+                        // Add event listeners for input changes to update window.resumeData
+                        document.querySelectorAll('.editable-field').forEach(input => {{
+                            input.addEventListener('change', (event) => {{
+                                const dataPath = event.target.dataset.path;
+                                let value = event.target.value;
+
+                                // Convert back to array if it was originally an array (e.g., achievements, technologies)
+                                if (dataPath.includes('achievements') || dataPath.includes('technologies') || dataPath.includes('links') || dataPath.includes('relevant_coursework')) {{
+                                    value = value.split('\\n').map(s => s.trim()).filter(s => s.length > 0);
+                                }} else if (dataPath.includes('skills')) {{
+                                    // For skills, split by comma and trim
+                                    value = value.split(',').map(s => s.trim()).filter(s => s.length > 0);
+                                }}
+
+                                setObjectValue(window.resumeData, dataPath, value);
+                                console.log('Updated resumeData:', window.resumeData);
+                            }});
+                        }});
+
+                        // Re-attach remove button listeners after re-rendering
+                        document.querySelectorAll('.remove-item-button').forEach(button => {{
+                            button.onclick = (event) => {{
+                                const index = parseInt(event.target.dataset.index);
+                                const section = event.target.dataset.section;
+                                removeListItem(section, index);
+                            }};
+                        }});
+                    }}
+
+                    function addListItem(section, defaultValues) {{
+                        if (!window.resumeData[section]) {{
+                            window.resumeData[section] = [];
+                        }}
+                        window.resumeData[section].push(defaultValues);
+                        renderEditableResume(); // Re-render to show new item
+                    }}
+
+                    function removeListItem(section, index) {{
+                        if (confirm('Are you sure you want to remove this item?')) {{
+                            window.resumeData[section].splice(index, 1);
+                            renderEditableResume(); // Re-render to reflect removal
+                        }}
+                    }}
+
+                    function escapeHtml(text) {{
+                        const map = {{
+                            '&': '&',
+                            '<': '<',
+                            '>': '>',
+                            '"': '"',
+                            "'": '&#039;',
+                            '`': '&#x60;'
+                        }};
+                        return text.replace(/[&<>"'`]/g, function(m) {{ return map[m]; }});
+                    }}
+
+                    document.addEventListener('DOMContentLoaded', renderEditableResume);
+
+                    {escaped_js_content}
+                </script>
+            </body>
+            </html>
+        """
+
+        # Save the content to a temporary HTML file in the 'uploads' directory
+        temp_filename = f"preview_{uuid.uuid4()}.html"
+        temp_filepath = os.path.join(current_app.config['UPLOAD_FOLDER'], temp_filename)
+
+        with open(temp_filepath, "w", encoding="utf-8") as f:
+            f.write(iframe_html_content)
+
+        # Return the URL to the temporary file
+        preview_url = f"/uploads/{temp_filename}"
+        return jsonify({"preview_url": preview_url, "parsed_data": parsed_data, "parsed_data_id": parsed_data_id}), 200
+
+    except Exception as e:
+        logger.error(f"Error generating resume preview: {e}")
+        return jsonify({"error": "Internal server error while generating preview."}), 500
+    finally:
+        client.close()
+
+@app.route('/uploads/<filename>')
+def uploaded_file(filename):
+    """Serve uploaded files from the UPLOAD_FOLDER"""
+    return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
+
 @app.route('/health')
 def health_check():
     """Health check endpoint"""
@@ -1124,4 +1480,4 @@ def health_check():
     }), 200
 
 if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0', port=5000)
+    app.run(debug=True, host='127.0.0.1', port=5000)

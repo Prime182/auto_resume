@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Resume Builder</title>
+    <style>
+        :root {
+            --primary-bg: #1a1a1a;
+            --secondary-bg: #2c2c2c;
+            --text-color: #e0e0e0;
+            --accent-color: #007bff;
+            --hover-color: #0056b3;
+            --border-color: #444;
+            --shadow-color: rgba(0, 0, 0, 0.3);
+            --success-color: #28a745;
+            --error-color: #dc3545;
+            --info-color: #17a2b8;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            background-color: var(--primary-bg);
+            color: var(--text-color);
+            line-height: 1.6;
+        }
+        .navbar {
+            background-color: var(--secondary-bg);
+            color: white;
+            padding: 15px 25px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 10px var(--shadow-color);
+        }
+        .navbar a {
+            color: var(--text-color);
+            text-decoration: none;
+            padding: 10px 18px;
+            border-radius: 5px;
+            transition: background-color 0.3s ease, color 0.3s ease;
+            font-weight: 500;
+        }
+        .navbar a:hover {
+            background-color: var(--hover-color);
+            color: white;
+        }
+        .navbar .logo {
+            font-size: 1.8em;
+            font-weight: bold;
+            color: var(--accent-color);
+        }
+        .navbar .menu {
+            display: flex;
+            gap: 10px;
+        }
+        .content {
+            padding: 30px;
+            text-align: center;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        h1 {
+            color: var(--text-color);
+            font-size: 2.5em;
+            margin-bottom: 20px;
+        }
+        p {
+            color: var(--text-color);
+            font-size: 1.1em;
+        }
+        .builder-section {
+            margin-top: 30px;
+            padding: 25px;
+            background-color: var(--secondary-bg);
+            border-radius: 10px;
+            box-shadow: 0 5px 15px var(--shadow-color);
+            max-width: 900px;
+            margin: 30px auto;
+            text-align: left;
+            box-sizing: border-box;
+        }
+        .builder-section h2 {
+            color: var(--text-color);
+            margin-bottom: 20px;
+            font-size: 2em;
+            text-align: center;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            color: var(--text-color);
+            font-weight: bold;
+            font-size: 0.95em;
+        }
+        .form-group select {
+            width: calc(100% - 20px);
+            padding: 10px;
+            border: 1px solid var(--border-color);
+            border-radius: 5px;
+            font-size: 1em;
+            background-color: #3a3a3a;
+            color: var(--text-color);
+            box-sizing: border-box;
+            transition: border-color 0.3s ease, box-shadow 0.3s ease;
+        }
+        .form-group select:focus {
+            border-color: var(--accent-color);
+            box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.25);
+            outline: none;
+        }
+        .action-button {
+            padding: 12px 25px;
+            background-color: var(--accent-color);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 1.1em;
+            cursor: pointer;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+            font-weight: bold;
+            margin-top: 10px;
+        }
+        .action-button:hover {
+            background-color: var(--hover-color);
+            transform: translateY(-2px);
+        }
+        #previewStatus {
+            margin-top: 15px;
+            font-weight: bold;
+            font-size: 1.1em;
+        }
+        .preview-container {
+            margin-top: 30px;
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 5px 15px var(--shadow-color);
+            background-color: white; /* Background for the iframe */
+        }
+        .preview-container h3 {
+            background-color: var(--accent-color);
+            color: white;
+            padding: 10px;
+            margin: 0;
+            text-align: center;
+            font-size: 1.5em;
+        }
+        #resumePreviewFrame {
+            width: 100%;
+            height: 800px; /* Adjust height as needed */
+            border: none;
+            display: block;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .navbar {
+                flex-direction: column;
+                padding: 15px;
+            }
+            .navbar .menu {
+                margin-top: 15px;
+                flex-wrap: wrap;
+                justify-content: center;
+            }
+            .navbar a {
+                padding: 8px 12px;
+            }
+            .content {
+                padding: 20px;
+            }
+            h1 {
+                font-size: 2em;
+            }
+            .builder-section {
+                margin: 20px auto;
+                padding: 20px;
+            }
+            .builder-section h2 {
+                font-size: 1.8em;
+            }
+            .form-group select {
+                font-size: 0.9em;
+                padding: 8px;
+            }
+            .action-button {
+                font-size: 1em;
+                padding: 10px 20px;
+            }
+            #resumePreviewFrame {
+                height: 600px; /* Smaller height for mobile */
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="navbar">
+        <div class="logo">My App</div>
+        <div class="menu">
+            <a href="/dashboard">Dashboard</a>
+            <a href="/resume_parser">Resume Parser</a>
+            <a href="/my_info">My Info</a>
+            <a href="/resume_builder">Resume Builder</a>
+            <a href="/logout">Logout</a>
+        </div>
+    </div>
+    <div class="content">
+        <h1>Resume Builder</h1>
+        <p>Select a template and your parsed resume data to generate a preview.</p>
+
+        <div class="builder-section">
+            <h2>Build Your Resume</h2>
+            <div class="form-group">
+                <label for="templateSelect">Select Template:</label>
+                <select id="templateSelect">
+                    <option value="">Loading templates...</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="parsedDataSelect">Select Parsed Data:</label>
+                <select id="parsedDataSelect">
+                    <option value="">Loading parsed data...</option>
+                </select>
+            </div>
+            <button onclick="previewResume()" class="action-button">Generate Preview</button>
+            <button onclick="saveBuiltResumeChanges()" class="action-button" id="saveResumeButton" style="display: none; margin-left: 10px;">Save Changes</button>
+            <p id="previewStatus"></p>
+        </div>
+
+        <div class="preview-container">
+            <h3>Resume Preview</h3>
+            <iframe id="resumePreviewFrame"></iframe>
+        </div>
+    </div>
+
+    <script>
+        let availableParsedResumes = [];
+        let currentParsedData = null; // To store the currently loaded parsed data
+        let currentParsedDataId = null; // To store the ID of the currently loaded parsed data
+
+        document.addEventListener('DOMContentLoaded', () => {
+            fetchTemplates();
+            fetchParsedResumes();
+        });
+
+        async function fetchTemplates() {
+            const templateSelect = document.getElementById('templateSelect');
+            try {
+                const response = await fetch('/templates');
+                const data = await response.json();
+                if (response.ok) {
+                    templateSelect.innerHTML = '<option value="">-- Select a Template --</option>';
+                    data.templates.forEach(templateId => {
+                        const option = document.createElement('option');
+                        option.value = templateId;
+                        option.textContent = templateId.replace(/_/g, ' ').replace(/\b\w/g, char => char.toUpperCase()); // Format for display
+                        templateSelect.appendChild(option);
+                    });
+                } else {
+                    templateSelect.innerHTML = '<option value="">Error loading templates</option>';
+                    console.error('Error fetching templates:', data.error);
+                }
+            } catch (error) {
+                templateSelect.innerHTML = '<option value="">Error loading templates</option>';
+                console.error('Network error fetching templates:', error);
+            }
+        }
+
+        async function fetchParsedResumes() {
+            const parsedDataSelect = document.getElementById('parsedDataSelect');
+            try {
+                const response = await fetch('/my_info_data');
+                const data = await response.json();
+                if (response.ok) {
+                    availableParsedResumes = data.resumes; // Store for later use
+                    parsedDataSelect.innerHTML = '<option value="">-- Select Parsed Data --</option>';
+                    if (availableParsedResumes.length > 0) {
+                        availableParsedResumes.forEach(resume => {
+                            const option = document.createElement('option');
+                            option.value = resume._id;
+                            option.textContent = `${resume.filename} (${new Date(resume.timestamp).toLocaleDateString()})`;
+                            parsedDataSelect.appendChild(option);
+                        });
+                    } else {
+                        parsedDataSelect.innerHTML += '<option value="">No parsed resumes found</option>';
+                    }
+                } else {
+                    parsedDataSelect.innerHTML = '<option value="">Error loading parsed data</option>';
+                    console.error('Error fetching parsed resumes:', data.error);
+                }
+            } catch (error) {
+                parsedDataSelect.innerHTML = '<option value="">Error loading parsed data</option>';
+                console.error('Network error fetching parsed resumes:', error);
+            }
+        }
+
+        async function previewResume() {
+            const templateId = document.getElementById('templateSelect').value;
+            const parsedDataId = document.getElementById('parsedDataSelect').value;
+            const previewStatus = document.getElementById('previewStatus');
+            const previewFrame = document.getElementById('resumePreviewFrame');
+            const saveButton = document.getElementById('saveResumeButton');
+
+            if (!templateId || !parsedDataId) {
+                previewStatus.textContent = 'Please select both a template and parsed data.';
+                previewStatus.style.color = 'var(--error-color)';
+                saveButton.style.display = 'none';
+                return;
+            }
+
+            previewStatus.textContent = 'Generating preview...';
+            previewStatus.style.color = 'var(--info-color)';
+            saveButton.style.display = 'none';
+
+            try {
+                const response = await fetch('/preview_resume', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ template_id: templateId, parsed_data_id: parsedDataId })
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error || 'Failed to generate resume preview.');
+                }
+
+                const data = await response.json(); // Expect JSON response now
+                const { preview_url, parsed_data, parsed_data_id } = data; // Expecting a URL now
+
+                currentParsedData = parsed_data;
+                currentParsedDataId = parsed_data_id;
+
+                previewFrame.src = preview_url; // Set iframe src to the URL
+
+                previewStatus.textContent = 'Resume preview generated successfully!';
+                previewStatus.style.color = 'var(--success-color)';
+                saveButton.style.display = 'inline-block'; // Show save button
+
+            } catch (error) {
+                previewStatus.textContent = `Error: ${error.message}`;
+                previewStatus.style.color = 'var(--error-color)';
+                console.error('Error generating preview:', error);
+                saveButton.style.display = 'none';
+            }
+        }
+
+        async function saveBuiltResumeChanges() {
+            const previewFrame = document.getElementById('resumePreviewFrame');
+            const previewStatus = document.getElementById('previewStatus');
+            const iframeWindow = previewFrame.contentWindow;
+
+            if (!iframeWindow || !iframeWindow.resumeData || !iframeWindow.parsedDataId) {
+                previewStatus.textContent = 'Error: No resume data to save. Generate a preview first.';
+                previewStatus.style.color = 'var(--error-color)';
+                return;
+            }
+
+            const updatedData = {};
+            iframeWindow.document.querySelectorAll('.editable-field').forEach(input => {
+                const path = input.dataset.path;
+                let value = input.value;
+                if (input.tagName === 'TEXTAREA') {
+                    value = value.split('\\n'); // Convert textarea content back to array for achievements/coursework
+                } else if (path.includes('technologies') || path.includes('skills')) {
+                    value = value.split(',').map(item => item.trim()).filter(item => item !== '');
+                }
+                setNestedValue(updatedData, path, value);
+            });
+
+            console.log('Saving changes for resume ID:', iframeWindow.parsedDataId, 'Data:', updatedData);
+            previewStatus.textContent = 'Saving changes...';
+            previewStatus.style.color = 'var(--info-color)';
+
+            try {
+                const response = await fetch(`/update_resume/${iframeWindow.parsedDataId}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ parsed_data: updatedData })
+                });
+                const data = await response.json();
+
+                if (!response.ok) {
+                    throw new Error(data.error || 'Failed to save changes.');
+                }
+
+                previewStatus.textContent = data.message;
+                previewStatus.style.color = 'var(--success-color)';
+                // Optionally, re-fetch to ensure the displayed data is fresh from DB
+                // fetchParsedResumes();
+            } catch (error) {
+                previewStatus.textContent = `Error saving changes: ${error.message}`;
+                previewStatus.style.color = 'var(--error-color)';
+                console.error('Error saving resume changes:', error);
+            }
+        }
+
+        function setNestedValue(obj, path, value) {
+            const parts = path.split('.');
+            let current = obj;
+
+            for (let i = 0; i < parts.length; i++) {
+                let part = parts[i];
+                const arrayMatch = part.match(/(.*)\[(\d+)\]/);
+
+                if (arrayMatch) {
+                    const arrayKey = arrayMatch[1];
+                    const index = parseInt(arrayMatch[2], 10);
+
+                    if (!current[arrayKey]) {
+                        current[arrayKey] = [];
+                    }
+                    if (i === parts.length - 1) {
+                        current[arrayKey][index] = value;
+                    } else {
+                        if (!current[arrayKey][index]) {
+                            current[arrayKey][index] = {};
+                        }
+                        current = current[arrayKey][index];
+                    }
+                } else {
+                    if (i === parts.length - 1) {
+                        current[part] = value;
+                    } else {
+                        if (!current[part]) {
+                            current[part] = {};
+                        }
+                        current = current[part];
+                    }
+                }
+            }
+        }
+
+        function escapeHtml(text) {
+            const map = {
+                '&': '&',
+                '<': '<',
+                '>': '>',
+                '"': '"',
+                "'": '&#039;',
+                '`': '&#x60;' // Escape backticks
+            };
+            return text.replace(/[&<>"'`]/g, function(m) { return map[m]; });
+        }
+
+    </script>
+</body>
+</html>
