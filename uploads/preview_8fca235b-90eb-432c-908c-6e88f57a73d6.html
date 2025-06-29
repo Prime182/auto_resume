@@ -1,0 +1,617 @@
+
+            <!DOCTYPE html>
+            <html lang="en">
+            <head>
+                <meta charset="UTF-8">
+                <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                <title>Resume Preview</title>
+                <style>
+                    body { font-family: sans-serif; margin: 20px; }
+                    .editable-field { border: 1px solid #ccc; padding: 5px; margin: 2px 0; width: calc(100% - 12px); }
+                    .editable-list-item { margin-bottom: 10px; padding: 10px; border: 1px dashed #eee; }
+                    .add-item-button, .remove-item-button {
+                        background-color: #007bff; color: white; border: none; padding: 5px 10px;
+                        border-radius: 3px; cursor: pointer; margin-top: 5px;
+                    }
+                    .remove-item-button { background-color: #dc3545; margin-left: 5px; }
+                    /* Basic Reset & Body Styles */
+body {
+    font-family: 'Arial', sans-serif;
+    line-height: 1.6;
+    margin: 0;
+    padding: 0;
+    background-color: #f4f4f4;
+    color: #333;
+}
+
+.resume-container {
+    width: 800px;
+    margin: 30px auto;
+    background: #fff;
+    padding: 30px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    border-radius: 8px;
+}
+
+/* Header Styles */
+.header {
+    text-align: center;
+    margin-bottom: 30px;
+    padding-bottom: 20px;
+    border-bottom: 2px solid #eee;
+}
+
+.header h1 {
+    margin: 0;
+    color: #2c3e50;
+    font-size: 2.5em;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+}
+
+.contact-info, .links {
+    font-size: 0.9em;
+    color: #777;
+    margin-top: 5px;
+}
+
+.contact-info span, .links a {
+    margin: 0 8px;
+    text-decoration: none;
+    color: #007bff;
+}
+
+.links a:hover {
+    text-decoration: underline;
+}
+
+/* Section Styles */
+.section {
+    margin-bottom: 25px;
+}
+
+.section h2 {
+    color: #007bff;
+    font-size: 1.5em;
+    border-bottom: 2px solid #007bff;
+    padding-bottom: 5px;
+    margin-bottom: 15px;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+}
+
+/* Experience & Education Item Styles */
+.experience-item, .education-item, .project-item, .certification-item, .achievement-item, .language-item {
+    margin-bottom: 20px;
+    padding-left: 15px;
+    border-left: 3px solid #eee;
+}
+
+.experience-item h3, .education-item h3, .project-item h3, .certification-item h3 {
+    margin: 0 0 5px 0;
+    color: #333;
+    font-size: 1.2em;
+}
+
+.experience-item p, .education-item p, .project-item p, .certification-item p {
+    margin: 0 0 3px 0;
+    font-size: 0.95em;
+    color: #555;
+}
+
+.experience-item ul, .project-item ul {
+    list-style: disc;
+    margin: 5px 0 0 20px;
+    padding: 0;
+}
+
+.experience-item ul li, .project-item ul li {
+    margin-bottom: 5px;
+}
+
+/* Skills Styles */
+.skills-category {
+    margin-bottom: 15px;
+}
+
+.skills-category h3 {
+    color: #444;
+    font-size: 1.1em;
+    margin-bottom: 8px;
+    border-bottom: 1px dashed #ccc;
+    padding-bottom: 3px;
+}
+
+.skills-category ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-wrap: wrap;
+}
+
+.skills-category ul li {
+    background-color: #e9f7ff;
+    color: #007bff;
+    padding: 5px 10px;
+    margin: 0 8px 8px 0;
+    border-radius: 4px;
+    font-size: 0.85em;
+}
+
+/* Editable Field Styles (for preview mode) */
+.editable-field {
+    border: 1px solid #ccc;
+    padding: 5px;
+    margin: 2px 0;
+    width: calc(100% - 12px); /* Adjust for padding and border */
+    box-sizing: border-box; /* Include padding and border in the element's total width and height */
+}
+
+.editable-list-item {
+    margin-bottom: 10px;
+    padding: 10px;
+    border: 1px dashed #eee;
+    background-color: #fdfdfd;
+    border-radius: 5px;
+}
+
+.add-item-button, .remove-item-button {
+    background-color: #007bff;
+    color: white;
+    border: none;
+    padding: 5px 10px;
+    border-radius: 3px;
+    cursor: pointer;
+    margin-top: 5px;
+    font-size: 0.9em;
+}
+
+.remove-item-button {
+    background-color: #dc3545;
+    margin-left: 5px;
+}
+
+                </style>
+            </head>
+            <body>
+                <!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Resume Template</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="resume-container">
+        <header class="header">
+            <h1 data-path="contact_information.name"></h1>
+            <p class="contact-info">
+                <span data-path="contact_information.phone"></span> |
+                <span data-path="contact_information.email"></span> |
+                <span data-path="contact_information.location"></span>
+            </p>
+            <p class="links">
+                <a href="#" data-path="contact_information.linkedin">LinkedIn</a> |
+                <a href="#" data-path="contact_information.github">GitHub</a> |
+                <a href="#" data-path="contact_information.website">Website</a>
+            </p>
+        </header>
+
+        <section class="section">
+            <h2>Professional Summary</h2>
+            <p data-path="professional_summary"></p>
+        </section>
+
+        <section class="section">
+            <h2>Experience</h2>
+            <div id="experience_list_container">
+                <!-- Experience items will be dynamically inserted here -->
+            </div>
+        </section>
+
+        <section class="section">
+            <h2>Education</h2>
+            <div id="education_list_container">
+                <!-- Education items will be dynamically inserted here -->
+            </div>
+        </section>
+
+        <section class="section">
+            <h2>Skills</h2>
+            <div class="skills-category">
+                <h3>Technical Skills</h3>
+                <ul id="technical_skills_list">
+                    <!-- Technical skills will be dynamically inserted here -->
+                </ul>
+            </div>
+            <div class="skills-category">
+                <h3>Soft Skills</h3>
+                <ul id="soft_skills_list">
+                    <!-- Soft skills will be dynamically inserted here -->
+                </ul>
+            </div>
+            <div class="skills-category">
+                <h3>Tools & Technologies</h3>
+                <ul id="tools_and_technologies_list">
+                    <!-- Tools & Technologies will be dynamically inserted here -->
+                </ul>
+            </div>
+        </section>
+
+        <section class="section">
+            <h2>Projects</h2>
+            <div id="projects_list_container">
+                <!-- Project items will be dynamically inserted here -->
+            </div>
+        </section>
+
+        <section class="section">
+            <h2>Certifications</h2>
+            <div id="certifications_list_container">
+                <!-- Certifications will be dynamically inserted here -->
+            </div>
+        </section>
+
+        <section class="section">
+            <h2>Achievements & Awards</h2>
+            <div id="achievements_and_awards_list_container">
+                <!-- Achievements & Awards will be dynamically inserted here -->
+            </div>
+        </section>
+
+        <section class="section">
+            <h2>Languages</h2>
+            <div id="languages_list_container">
+                <!-- Languages will be dynamically inserted here -->
+            </div>
+        </section>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
+
+                <script type="application/json" id="resumeDataJson">
+                    {"contact_information": {"name": "PAVAN KRISHNA. P", "email": "pavankrishnap18@gmail.com", "phone": "+91 7338797300", "linkedin": "linkedin.com/in/pavankrishnap18", "github": "github.com/pavankrishnap18", "location": "Chennai", "website": "", "urls": ""}, "professional_summary": "Analytical and impact-driven Data Science postgraduate skilled in building end-to-end ML/NLP systems, real-time AI tools, and automated pipelines. Experienced with AI integration, containerization, and cross-functional collaboration. Looking to contribute to GenAI-driven product development.", "experience": [{"position": "Data Science Intern", "company": "Crest Climbier Software Solutions, Chennai", "duration": "Dec 2024 - Apr 2025", "location": "Chennai", "achievements": ["Fine-tuned Modern-BERT on 10K synthetic texts; achieved 94.8% sentiment classification accuracy.", "Built end-to-end ML pipeline integrated with N8N; automated campaign workflows, cutting manual effort by 80%.", "Created Power BI dashboards from PostgresQL data for real-time sales KPI tracking.", "Developed a WhatsApp AI bot using N8N for doctor recommendations and clinic queries."], "technologies": ["Python, NLP, N8N, Power BI, WhatsApp"]}, {"position": "Data Visualization Intern", "company": "Regional Meteorological Centre, Chennai", "duration": "May 2024 - Jun 2024", "location": "Chennai", "achievements": ["Cleaned and analyzed 94K+ hourly weather records (2013-2023) using Python and Tableau.", "Found strong correlation patterns between temperature, humidity, and Discomfort Index (DI).", "Identified key DI thresholds (24-27\u00b0C common; >32\u00b0C rising); emphasized hour-level resolution."], "technologies": ["Python, Tableau"]}], "education": [{"degree": "M.Sc. Applied Data Science", "institution": "SRMIST, Kattankulathur", "graduation_date": "Jul 2023 - May 2025", "gpa": "8.3/11", "relevant_coursework": []}, {"degree": "B.Sc. Statistics", "institution": "Loyola College, Chennai", "graduation_date": "Sep 2020 - Jul 2023", "gpa": "6.94", "relevant_coursework": []}], "skills": {"technical_skills": "Visualization: Power BI, Tableau, Plotly, Matplotlib, Seaborn, DevOps & Deployment: Docker, Render, Git, VS Code, Data Processing: Pandas, NumPy, N8N, Webhooks, PostgresQL, MongoDB, APIs & Backend: FastAPI, Flask, Twilio, SMTP, Jinja2, Programming: Python, R, SQL, Analytics: EDA, Time Series Analysis, Forecasting, Statistical modelling, GenAI & LLMs: Google Gemini, Gemini API, LangChain (learning), OpenAI API (familiar), Prompt Design, Platforms & Tools: Google Colab, Cursor, HuggingFace, LangSmith (learning), Cline, RStudio, ML & NLP: Scikit-learn, Modern-BERT, Deep Learning, LSTM, Sentiment Analysis", "soft_skills": "Critical Thinking, Continuous Learning, Curiosity, Adaptability, Problem Solving, Team Collaboration", "tools_and_technologies": "Python, R, SQL, Scikit-learn, Modern-BERT, Deep Learning, LSTM, Sentiment Analysis, Google Gemini, Gemini API, LangChain, OpenAI API, Prompt Design, Pandas, NumPy, N8N, Webhooks, PostgresQL, MongoDB, FastAPI, Flask, Twilio, SMTP, Jinja2, Power BI, Tableau, Plotly, Matplotlib, Seaborn, Docker, Render, Git, VS Code, Google Colab, Cursor, HuggingFace, LangSmith, Cline, RStudio", "languages": ["English", "Tamil", "Telugu (native)"]}, "projects": [{"name": "Business Process Automation System", "description": "Scraped social media data with Apify; ran sentiment analysis via fine-tuned BERT. Automated CRM using N8N and Gemini; enabled real-time campaign execution and tracking.", "technologies": ["Python, PostgresQL, N8N, Apify, Power BI, Google Gemini"], "links": []}, {"name": "Discomfort Index Forecasting System (DIFAS)", "description": "Predicted DI using BiLSTM (93% accuracy); displayed it in website dashboard. Sent real-time alerts via Twilio; interactive plots via Plotly; API-linked for weather input.", "technologies": ["Python, Flask, BiLSTM, Prophet, Twilio, Plotly, Open Meteo API"], "links": []}, {"name": "LLM-Powered Job Outreach Assistant", "description": "Built AI-based job outreach tool with recruiter email lookup and LLM-crafted mails. Included tracking pixel and lead-response logging in MongoDB; Dockerized and deployed on Render.", "technologies": ["FastAPI, MongoDB, Google Gemini, Hunter.io, SMTP, Docker, Render"], "links": []}], "certifications": [{"name": "Python for Data Science", "issuer": "Coursera", "date": "", "expiry": "", "link": ""}, {"name": "What is Data Science?", "issuer": "Coursera", "date": "", "expiry": "", "link": ""}, {"name": "Learning Power BI Desktop", "issuer": "LinkedIn", "date": "", "expiry": "", "link": ""}, {"name": "AWS Cloud Practitioner Essentials", "issuer": "AWS", "date": "", "expiry": "", "link": ""}]}
+                </script>
+                <script>
+                    window.resumeData = JSON.parse(document.getElementById('resumeDataJson').textContent);
+                    window.parsedDataId = "685ef6b46d15ac58ace7f120";
+
+                    // Function to populate placeholders and make them editable
+                    // Helper function to get a value from an object based on a path string
+                    function getObjectValue(obj, path) {
+                        return path.split('.').reduce((o, i) => (o ? o[i] : undefined), obj);
+                    }
+
+                    // Helper function to set a value in an object based on a path string
+                    function setObjectValue(obj, path, value) {
+                        const parts = path.split('.');
+                        let current = obj;
+                        for (let i = 0; i < parts.length - 1; i++) {
+                            if (!current[parts[i]]) {
+                                current[parts[i]] = {};
+                            }
+                            current = current[parts[i]];
+                        }
+                        current[parts[parts.length - 1]] = value;
+                    }
+
+                    // Function to populate placeholders and make them editable
+                    function renderEditableResume() {
+                        // Iterate over all elements with data-path attribute
+                        document.querySelectorAll('[data-path]').forEach(element => {
+                            const dataPath = element.dataset.path;
+                            let value = getObjectValue(window.resumeData, dataPath);
+
+                            // Handle array values (e.g., skills, achievements)
+                            if (Array.isArray(value)) {
+                                value = value.join('\n'); // Join array items with newline for textarea
+                            } else if (typeof value === 'object' && value !== null) {
+                                // If it's an object, we might need to stringify or handle specifically
+                                // For now, we'll just skip or show a placeholder
+                                value = JSON.stringify(value); // Or handle more gracefully
+                            } else {
+                                value = value || ''; // Ensure value is a string
+                            }
+
+                            if (element.tagName === 'INPUT' || element.tagName === 'TEXTAREA') {
+                                element.value = escapeHtml(value);
+                            } else {
+                                element.textContent = value; // For non-input elements
+                            }
+                        });
+
+                        // Dynamic rendering for list sections (experience, education, projects, etc.)
+                        // This part assumes the template has a container for each list section, e.g., <div id="experience_list_container"></div>
+                        const listSections = {
+                            'experience': {
+                                default: { position: '', company: '', duration: '', location: '', achievements: [], technologies: [] },
+                                render: (item, index) => `
+                                    <label>Position:</label><input type="text" class="editable-field" data-path="experience[${index}].position" value="${escapeHtml(item.position || '')}"><br>
+                                    <label>Company:</label><input type="text" class="editable-field" data-path="experience[${index}].company" value="${escapeHtml(item.company || '')}"><br>
+                                    <label>Duration:</label><input type="text" class="editable-field" data-path="experience[${index}].duration" value="${escapeHtml(item.duration || '')}"><br>
+                                    <label>Location:</label><input type="text" class="editable-field" data-path="experience[${index}].location" value="${escapeHtml(item.location || '')}"><br>
+                                    <label>Achievements:</label><textarea class="editable-field" data-path="experience[${index}].achievements">${escapeHtml(Array.isArray(item.achievements) ? item.achievements.join('\n') : item.achievements || '')}</textarea><br>
+                                    <label>Technologies:</label><input type="text" class="editable-field" data-path="experience[${index}].technologies" value="${escapeHtml(Array.isArray(item.technologies) ? item.technologies.join(', ') : item.technologies || '')}"><br>
+                                    <button class="remove-item-button" data-index="${index}" data-section="experience">Remove</button>
+                                `
+                            },
+                            'education': {
+                                default: { degree: '', institution: '', graduation_date: '', gpa: '', relevant_coursework: [] },
+                                render: (item, index) => `
+                                    <label>Degree:</label><input type="text" class="editable-field" data-path="education[${index}].degree" value="${escapeHtml(item.degree || '')}"><br>
+                                    <label>Institution:</label><input type="text" class="editable-field" data-path="education[${index}].institution" value="${escapeHtml(item.institution || '')}"><br>
+                                    <label>Graduation Date:</label><input type="text" class="editable-field" data-path="education[${index}].graduation_date" value="${escapeHtml(item.graduation_date || '')}"><br>
+                                    <label>GPA:</label><input type="text" class="editable-field" data-path="education[${index}].gpa" value="${escapeHtml(item.gpa || '')}"><br>
+                                    <label>Coursework:</label><textarea class="editable-field" data-path="education[${index}].relevant_coursework">${escapeHtml(Array.isArray(item.relevant_coursework) ? item.relevant_coursework.join('\n') : item.relevant_coursework || '')}</textarea><br>
+                                    <button class="remove-item-button" data-index="${index}" data-section="education">Remove</button>
+                                `
+                            },
+                            'projects': {
+                                default: { name: '', description: '', technologies: [], links: [] },
+                                render: (item, index) => `
+                                    <label>Project Name:</label><input type="text" class="editable-field" data-path="projects[${index}].name" value="${escapeHtml(item.name || '')}"><br>
+                                    <label>Description:</label><textarea class="editable-field" data-path="projects[${index}].description">${escapeHtml(item.description || '')}</textarea><br>
+                                    <label>Technologies:</label><input type="text" class="editable-field" data-path="projects[${index}].technologies" value="${escapeHtml(Array.isArray(item.technologies) ? item.technologies.join(', ') : item.technologies || '')}"><br>
+                                    <label>Links:</label><input type="text" class="editable-field" data-path="projects[${index}].links" value="${escapeHtml(Array.isArray(item.links) ? item.links.join(', ') : item.links || '')}"><br>
+                                    <button class="remove-item-button" data-index="${index}" data-section="projects">Remove</button>
+                                `
+                            },
+                            'certifications': {
+                                default: { name: '', issuer: '', date: '', expiry: '', link: '' },
+                                render: (item, index) => `
+                                    <label>Certification Name:</label><input type="text" class="editable-field" data-path="certifications[${index}].name" value="${escapeHtml(item.name || '')}"><br>
+                                    <label>Issuer:</label><input type="text" class="editable-field" data-path="certifications[${index}].issuer" value="${escapeHtml(item.issuer || '')}"><br>
+                                    <label>Date:</label><input type="text" class="editable-field" data-path="certifications[${index}].date" value="${escapeHtml(item.date || '')}"><br>
+                                    <label>Expiry:</label><input type="text" class="editable-field" data-path="certifications[${index}].expiry" value="${escapeHtml(item.expiry || '')}"><br>
+                                    <label>Link:</label><input type="text" class="editable-field" data-path="certifications[${index}].link" value="${escapeHtml(item.link || '')}"><br>
+                                    <button class="remove-item-button" data-index="${index}" data-section="certifications">Remove</button>
+                                `
+                            },
+                            'achievements_and_awards': {
+                                default: '',
+                                render: (item, index) => `
+                                    <textarea class="editable-field" data-path="achievements_and_awards[${index}]">${escapeHtml(item || '')}</textarea><br>
+                                    <button class="remove-item-button" data-index="${index}" data-section="achievements_and_awards">Remove</button>
+                                `
+                            },
+                            'languages': {
+                                default: '',
+                                render: (item, index) => `
+                                    <input type="text" class="editable-field" data-path="languages[${index}]" value="${escapeHtml(item || '')}"><br>
+                                    <button class="remove-item-button" data-index="${index}" data-section="languages">Remove</button>
+                                `
+                            }
+                        };
+
+                        for (const sectionKey in listSections) {
+                            const container = document.getElementById(`${sectionKey}_list_container`);
+                            if (container && window.resumeData[sectionKey]) {
+                                container.innerHTML = ''; // Clear existing content
+                                window.resumeData[sectionKey].forEach((item, index) => {
+                                    const itemDiv = document.createElement('div');
+                                    itemDiv.className = 'editable-list-item';
+                                    itemDiv.innerHTML = listSections[sectionKey].render(item, index);
+                                    container.appendChild(itemDiv);
+                                });
+                                const addButton = document.createElement('button');
+                                addButton.className = 'add-item-button';
+                                addButton.textContent = `Add ${sectionKey.replace(/_/g, ' ').replace(/\b[A-Za-z0-9_]/g, l => l.toUpperCase())}`;
+                                addButton.onclick = () => addListItem(sectionKey, listSections[sectionKey].default);
+                                container.appendChild(addButton);
+                            }
+                        }
+
+                        // Add event listeners for input changes to update window.resumeData
+                        document.querySelectorAll('.editable-field').forEach(input => {
+                            input.addEventListener('change', (event) => {
+                                const dataPath = event.target.dataset.path;
+                                let value = event.target.value;
+
+                                // Convert back to array if it was originally an array (e.g., achievements, technologies)
+                                if (dataPath.includes('achievements') || dataPath.includes('technologies') || dataPath.includes('links') || dataPath.includes('relevant_coursework')) {
+                                    value = value.split('\n').map(s => s.trim()).filter(s => s.length > 0);
+                                } else if (dataPath.includes('skills')) {
+                                    // For skills, split by comma and trim
+                                    value = value.split(',').map(s => s.trim()).filter(s => s.length > 0);
+                                }
+
+                                setObjectValue(window.resumeData, dataPath, value);
+                                console.log('Updated resumeData:', window.resumeData);
+                            });
+                        });
+
+                        // Re-attach remove button listeners after re-rendering
+                        document.querySelectorAll('.remove-item-button').forEach(button => {
+                            button.onclick = (event) => {
+                                const index = parseInt(event.target.dataset.index);
+                                const section = event.target.dataset.section;
+                                removeListItem(section, index);
+                            };
+                        });
+                    }
+
+                    function addListItem(section, defaultValues) {
+                        if (!window.resumeData[section]) {
+                            window.resumeData[section] = [];
+                        }
+                        window.resumeData[section].push(defaultValues);
+                        renderEditableResume(); // Re-render to show new item
+                    }
+
+                    function removeListItem(section, index) {
+                        if (confirm('Are you sure you want to remove this item?')) {
+                            window.resumeData[section].splice(index, 1);
+                            renderEditableResume(); // Re-render to reflect removal
+                        }
+                    }
+
+                    function escapeHtml(text) {
+                        const map = {
+                            '&': '&',
+                            '<': '<',
+                            '>': '>',
+                            '"': '"',
+                            "'": '&#039;',
+                            '`': '&#x60;'
+                        };
+                        return text.replace(/[&<>"'`]/g, function(m) { return map[m]; });
+                    }
+
+                    document.addEventListener('DOMContentLoaded', renderEditableResume);
+
+                    document.addEventListener('DOMContentLoaded', () => {
+    const resumeData = window.resumeData; // Data passed from Flask backend
+
+    // Function to populate a single element based on data-path
+    function populateElement(element, value) {
+        if (element.tagName === 'A') {
+            element.href = value;
+            element.textContent = value.replace(/(^\w+:|^)\/\//, ''); // Display clean URL
+        } else if (element.tagName === 'INPUT' || element.tagName === 'TEXTAREA') {
+            element.value = value;
+        } else {
+            element.textContent = value;
+        }
+    }
+
+    // Populate simple data-path elements
+    document.querySelectorAll('[data-path]').forEach(element => {
+        const path = element.dataset.path;
+        let value = getObjectValue(resumeData, path);
+
+        if (value !== undefined && value !== null) {
+            // Special handling for skills which are objects with arrays
+            if (path.startsWith('skills.') && Array.isArray(value)) {
+                const listId = element.id; // e.g., 'technical_skills_list'
+                const ulElement = document.getElementById(listId);
+                if (ulElement) {
+                    ulElement.innerHTML = ''; // Clear existing
+                    value.forEach(skill => {
+                        const li = document.createElement('li');
+                        li.textContent = skill;
+                        ulElement.appendChild(li);
+                    });
+                }
+            } else if (Array.isArray(value)) {
+                // For other arrays, join them with a newline for display
+                populateElement(element, value.join('\n'));
+            } else if (typeof value === 'object' && !Array.isArray(value)) {
+                // For objects, if it's a link, handle it
+                if (element.tagName === 'A' && value.url) {
+                    populateElement(element, value.url);
+                } else {
+                    // For other objects, stringify or handle specifically
+                    populateElement(element, JSON.stringify(value));
+                }
+            } else {
+                populateElement(element, value);
+            }
+        }
+    });
+
+    // Render list sections (experience, education, projects, certifications, achievements, languages)
+    const listSections = {
+        'experience': {
+            containerId: 'experience_list_container',
+            renderItem: (item) => `
+                <div class="experience-item">
+                    <h3>${escapeHtml(item.position || '')} at ${escapeHtml(item.company || '')}</h3>
+                    <p>${escapeHtml(item.duration || '')} | ${escapeHtml(item.location || '')}</p>
+                    <ul>
+                        ${Array.isArray(item.achievements) ? item.achievements.map(ach => `<li>${escapeHtml(ach)}</li>`).join('') : ''}
+                    </ul>
+                    ${Array.isArray(item.technologies) && item.technologies.length > 0 ? `<p><strong>Technologies:</strong> ${escapeHtml(item.technologies.join(', '))}</p>` : ''}
+                </div>
+            `
+        },
+        'education': {
+            containerId: 'education_list_container',
+            renderItem: (item) => `
+                <div class="education-item">
+                    <h3>${escapeHtml(item.degree || '')}</h3>
+                    <p>${escapeHtml(item.institution || '')} | ${escapeHtml(item.graduation_date || '')}</p>
+                    ${item.gpa ? `<p>GPA: ${escapeHtml(item.gpa)}</p>` : ''}
+                    ${Array.isArray(item.relevant_coursework) && item.relevant_coursework.length > 0 ? `<p><strong>Relevant Coursework:</strong> ${escapeHtml(item.relevant_coursework.join(', '))}</p>` : ''}
+                </div>
+            `
+        },
+        'projects': {
+            containerId: 'projects_list_container',
+            renderItem: (item) => `
+                <div class="project-item">
+                    <h3>${escapeHtml(item.name || '')}</h3>
+                    <p>${escapeHtml(item.description || '')}</p>
+                    ${Array.isArray(item.technologies) && item.technologies.length > 0 ? `<p><strong>Technologies:</strong> ${escapeHtml(item.technologies.join(', '))}</p>` : ''}
+                    ${Array.isArray(item.links) && item.links.length > 0 ? `<p><strong>Links:</strong> ${item.links.map(link => `<a href="${escapeHtml(link)}" target="_blank">${escapeHtml(link.replace(/(^\w+:|^)\/\//, ''))}</a>`).join(', ')}</p>` : ''}
+                </div>
+            `
+        },
+        'certifications': {
+            containerId: 'certifications_list_container',
+            renderItem: (item) => `
+                <div class="certification-item">
+                    <h3>${escapeHtml(item.name || '')}</h3>
+                    <p>Issuer: ${escapeHtml(item.issuer || '')}</p>
+                    <p>Date: ${escapeHtml(item.date || '')} ${item.expiry ? `(Expires: ${escapeHtml(item.expiry)})` : ''}</p>
+                    ${item.link ? `<p><a href="${escapeHtml(item.link)}" target="_blank">View Credential</a></p>` : ''}
+                </div>
+            `
+        },
+        'achievements_and_awards': {
+            containerId: 'achievements_and_awards_list_container',
+            renderItem: (item) => `
+                <div class="achievement-item">
+                    <p>${escapeHtml(item || '')}</p>
+                </div>
+            `
+        },
+        'languages': {
+            containerId: 'languages_list_container',
+            renderItem: (item) => `
+                <div class="language-item">
+                    <p>${escapeHtml(item || '')}</p>
+                </div>
+            `
+        }
+    };
+
+    for (const sectionKey in listSections) {
+        const config = listSections[sectionKey];
+        const container = document.getElementById(config.containerId);
+        const data = resumeData[sectionKey];
+
+        if (container && Array.isArray(data)) {
+            container.innerHTML = ''; // Clear existing content
+            data.forEach(item => {
+                container.innerHTML += config.renderItem(item);
+            });
+        }
+    }
+
+    // Helper function to get a value from an object based on a path string
+    function getObjectValue(obj, path) {
+        return path.split('.').reduce((o, i) => (o ? o[i] : undefined), obj);
+    }
+
+    // Helper function to escape HTML to prevent XSS
+    function escapeHtml(text) {
+        const map = {
+            '&': '&',
+            '<': '<',
+            '>': '>',
+            '"': '"',
+            "'": '&#039;',
+            '`': '&#x60;'
+        };
+        return text.replace(/[&<>"'`]/g, function(m) { return map[m]; });
+    }
+});
+
+                </script>
+            </body>
+            </html>
+        
